@@ -20,7 +20,7 @@ namespace AppController
         /// The main entry point for the application.
         /// </summary>
         /// 
-        private static List<long> _processIds = new List<long>();
+        private static List<int> _processIds = new List<int>();
         private static Dictionary<long, List<Tuple<string, string>>> _browserProcessIds = new Dictionary<long, List<Tuple<string, string>>>();
         private static string url = "https://manvindarsingh.bsite.net";
         static void Main()
@@ -34,85 +34,14 @@ namespace AppController
             {
                 while (true)
                 {
-                    if ((DateTime.Now - updatedOn).TotalMinutes > 2)
-                    {
-                        appHelper = GetAppData().Result;
-                        updatedOn = DateTime.Now;
-                        myIP = GetIP();
-                        user = user + " (" + myIP + ")";
-                    }
-                    var list = new List<string>();
-                    var apps = appHelper.AllowedAppsAndUrls.Where(_ => _.Type == "App").Select(_ => _.Name);
-                    var processes = Process.GetProcesses().Where(_ => !apps.Contains(_.ProcessName));
+                    UpdateAppSettings(ref appHelper, ref updatedOn, ref user, ref myIP);
 
-                    foreach (Process p in processes)
-                    {
-                        if (!string.IsNullOrEmpty(p.MainWindowTitle))
-                        {
-                            list.Add(p.MainWindowTitle);
-                            if (appHelper.KillApps)
-                            {
-                                p.Kill();
-                            }
+                    CheckAndRemoveHoldProcesses(appHelper);
 
-                            var t = Task.Run(async () =>
-                            {
-                                if (!_processIds.Contains(p.Id))
-                                {
-                                    await PostData(p.ProcessName, user, p.MainWindowTitle);
-                                }
-                            });
-                            t.Wait();
-                            if (!appHelper.KillApps && !_processIds.Contains(p.Id))
-                            {
-                                _processIds.Add(p.Id);
-                            }
-                        }
-                    }
-                    List<Process> procsChrome = Process.GetProcessesByName("chrome").ToList();
-                    procsChrome.AddRange(Process.GetProcessesByName("msedge"));
-                    foreach (Process proc in procsChrome)
-                    {
-                        // the chrome process must have a window 
-                        if (proc.MainWindowHandle == IntPtr.Zero)
-                        {
-                            continue;
-                        }
-                        AutomationElement root = AutomationElement.FromHandle(proc.MainWindowHandle);
-                        Condition condition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.TabItem);
-                        var tabs = root.FindAll(TreeScope.Descendants, condition);
-                        foreach (AutomationElement tabitem in tabs)
-                        {
-                            if (_browserProcessIds.ContainsKey(proc.Id))
-                            {
-                                if (!string.IsNullOrEmpty(tabitem.Current.Name))
-                                {
-                                    var matchedItem = _browserProcessIds[proc.Id].FirstOrDefault(_ => _.Item1 == tabitem.Current.AutomationId && _.Item2 == tabitem.Current.Name);
-                                    if (matchedItem == null)
-                                    {
-                                        var t = Task.Run(async () =>
-                                        {
-                                            await PostData(proc.ProcessName, user, tabitem.Current.Name);
-                                            _browserProcessIds[proc.Id].Add(new Tuple<string, string>(tabitem.Current.AutomationId, tabitem.Current.Name));
-                                        });
-                                        t.Wait();
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                var t = Task.Run(async () =>
-                                {
-                                    if (!string.IsNullOrEmpty(tabitem.Current.Name))
-                                    {
-                                        await PostData(proc.ProcessName, user, tabitem.Current.Name);
-                                        _browserProcessIds.Add(proc.Id, new List<Tuple<string, string>> { new Tuple<string, string>(tabitem.Current.AutomationId, tabitem.Current.Name) });
-                                    }
-                                });
-                                t.Wait();
-                            }
-                        }
-                    }
+                    NotifyAndKillOpenedProcesses(appHelper, user);
+
+                    NotifyOpenedBrowserTabs(user);
+
                     Thread.Sleep(1000);
                 }
             }
@@ -124,6 +53,107 @@ namespace AppController
                     st = File.ReadAllText("test.txt");
                 }
                 File.WriteAllText("test.txt", st + Environment.NewLine + ex.Message);
+            }
+        }
+
+        private static void NotifyAndKillOpenedProcesses(Helper appHelper, string user)
+        {
+            var apps = appHelper.AllowedAppsAndUrls.Where(_ => _.Type == "App").Select(_ => _.Name);
+            var processes = Process.GetProcesses().Where(_ => _.MainWindowHandle != IntPtr.Zero && !apps.Contains(_.ProcessName));
+            foreach (Process p in processes)
+            {
+                if (!string.IsNullOrEmpty(p.MainWindowTitle))
+                {
+                    if (appHelper.KillApps)
+                    {
+                        p.Kill();
+                    }
+
+                    var t = Task.Run(async () =>
+                    {
+                        if (!_processIds.Contains(p.Id))
+                        {
+                            await PostData(p.ProcessName, user, p.MainWindowTitle);
+                        }
+                    });
+                    t.Wait();
+                    if (!appHelper.KillApps && !_processIds.Contains(p.Id))
+                    {
+                        _processIds.Add(p.Id);
+                    }
+                }
+            }
+        }
+
+        private static void NotifyOpenedBrowserTabs(string user)
+        {
+            List<Process> procsChrome = Process.GetProcessesByName("chrome").ToList();
+            procsChrome.AddRange(Process.GetProcessesByName("msedge"));
+            foreach (Process proc in procsChrome)
+            {
+                // the chrome process must have a window 
+                if (proc.MainWindowHandle == IntPtr.Zero)
+                {
+                    continue;
+                }
+                AutomationElement root = AutomationElement.FromHandle(proc.MainWindowHandle);
+                Condition condition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.TabItem);
+                var tabs = root.FindAll(TreeScope.Descendants, condition);
+                foreach (AutomationElement tabitem in tabs)
+                {
+                    if (_browserProcessIds.ContainsKey(proc.Id))
+                    {
+                        if (!string.IsNullOrEmpty(tabitem.Current.Name))
+                        {
+                            var matchedItem = _browserProcessIds[proc.Id].FirstOrDefault(_ => _.Item1 == tabitem.Current.AutomationId && _.Item2 == tabitem.Current.Name);
+                            if (matchedItem == null)
+                            {
+                                var t = Task.Run(async () =>
+                                {
+                                    await PostData(proc.ProcessName, user, tabitem.Current.Name);
+                                    _browserProcessIds[proc.Id].Add(new Tuple<string, string>(tabitem.Current.AutomationId, tabitem.Current.Name));
+                                });
+                                t.Wait();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var t = Task.Run(async () =>
+                        {
+                            if (!string.IsNullOrEmpty(tabitem.Current.Name))
+                            {
+                                await PostData(proc.ProcessName, user, tabitem.Current.Name);
+                                _browserProcessIds.Add(proc.Id, new List<Tuple<string, string>> { new Tuple<string, string>(tabitem.Current.AutomationId, tabitem.Current.Name) });
+                            }
+                        });
+                        t.Wait();
+                    }
+                }
+            }
+        }
+
+        private static void UpdateAppSettings(ref Helper appHelper, ref DateTime updatedOn, ref string user, ref string myIP)
+        {
+            if ((DateTime.Now - updatedOn).TotalMinutes > 2)
+            {
+                appHelper = GetAppData().Result;
+                updatedOn = DateTime.Now;
+                myIP = GetIP();
+                user = user + " (" + myIP + ")";
+            }
+        }
+
+        private static void CheckAndRemoveHoldProcesses(Helper appHelper)
+        {
+            if (_processIds.Any() && appHelper.KillApps)
+            {
+                foreach (var processId in _processIds)
+                {
+                    var p = Process.GetProcessById(processId);
+                    p?.Kill();
+                }
+                _processIds.Clear();
             }
         }
 
@@ -203,7 +233,6 @@ namespace AppController
                     {
                         helper = await response.Content.ReadAsAsync<Helper>();
                         processing = false;
-                        return helper;
                     }
                 }
                 catch
