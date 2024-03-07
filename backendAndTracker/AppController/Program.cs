@@ -23,18 +23,19 @@ namespace AppController
         private static List<int> _processIds = new List<int>();
         private static Dictionary<long, List<Tuple<string, string>>> _browserProcessIds = new Dictionary<long, List<Tuple<string, string>>>();
         private static string url = "https://manvindarsingh.bsite.net";
+        private static DateTime updatedOn = DateTime.Now;
+        private static string userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+
         static void Main()
         {
             var appHelper = GetAppData().Result;
-            var updatedOn = DateTime.Now;
-            var user = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-            string myIP = GetIP();
-            user = user + " (" + myIP + ")";
+            
+            var user = GetUser();
             try
             {
                 while (true)
                 {
-                    UpdateAppSettings(ref appHelper, ref updatedOn, ref user, ref myIP);
+                    UpdateAppSettings(ref appHelper, ref user);
 
                     CheckAndRemoveHoldProcesses(appHelper);
 
@@ -133,15 +134,20 @@ namespace AppController
             }
         }
 
-        private static void UpdateAppSettings(ref Helper appHelper, ref DateTime updatedOn, ref string user, ref string myIP)
+        private static void UpdateAppSettings(ref Helper appHelper, ref string user)
         {
             if ((DateTime.Now - updatedOn).TotalMinutes > 2)
             {
                 appHelper = GetAppData().Result;
                 updatedOn = DateTime.Now;
-                myIP = GetIP();
-                user = user + " (" + myIP + ")";
+                user = GetUser();
             }
+        }
+
+        private static string GetUser()
+        {
+            string myIP = GetIP();
+            return userInner + " (" + myIP + ")";
         }
 
         private static void CheckAndRemoveHoldProcesses(Helper appHelper)
