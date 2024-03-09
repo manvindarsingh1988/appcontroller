@@ -22,9 +22,10 @@ namespace AppController
         /// 
         private static List<int> _processIds = new List<int>();
         private static Dictionary<long, List<Tuple<string, string>>> _browserProcessIds = new Dictionary<long, List<Tuple<string, string>>>();
-        private static string url = "https://manvindarsingh.bsite.net";
-        private static DateTime updatedOn = DateTime.Now;
-        private static string userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+        private static string _url = "https://manvindarsingh.bsite.net";
+        private static DateTime _updatedOn = DateTime.Now;
+        private static string _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+        private static List<AppInfo> _failed = new List<AppInfo>();
 
         static void Main()
         {
@@ -35,6 +36,8 @@ namespace AppController
             {
                 while (true)
                 {
+                    ProcessFailed();
+
                     UpdateAppSettings(ref appHelper, ref user);
 
                     CheckAndRemoveHoldProcesses(appHelper);
@@ -49,11 +52,31 @@ namespace AppController
             catch (Exception ex)
             {
                 var st = string.Empty;
-                if (File.Exists("test.txt"))
+                if (System.IO.File.Exists("test.txt"))
                 {
-                    st = File.ReadAllText("test.txt");
+                    st = System.IO.File.ReadAllText("test.txt");
                 }
-                File.WriteAllText("test.txt", st + Environment.NewLine + ex.Message);
+                System.IO.File.WriteAllText("test.txt", st + Environment.NewLine + ex.Message);
+            }
+        }
+
+        private static void ProcessFailed()
+        {
+            if(_failed.Any())
+            {
+                var processing = _failed.ToList();
+                foreach (var item in processing)
+                {
+                    var t = Task.Run(async () =>
+                    {
+                        var result = await PostDataInner(item);
+                        if(result)
+                        {
+                            _failed.Remove(item);
+                        }
+                    });
+                    t.Wait();
+                }
             }
         }
 
@@ -136,10 +159,10 @@ namespace AppController
 
         private static void UpdateAppSettings(ref Helper appHelper, ref string user)
         {
-            if ((DateTime.Now - updatedOn).TotalMinutes > 2)
+            if ((DateTime.Now - _updatedOn).TotalMinutes > 2)
             {
                 appHelper = GetAppData().Result;
-                updatedOn = DateTime.Now;
+                _updatedOn = DateTime.Now;
                 user = GetUser();
             }
         }
@@ -147,7 +170,7 @@ namespace AppController
         private static string GetUser()
         {
             string myIP = GetIP();
-            return userInner + " (" + myIP + ")";
+            return _userInner + " (" + myIP + ")";
         }
 
         private static void CheckAndRemoveHoldProcesses(Helper appHelper)
@@ -171,45 +194,53 @@ namespace AppController
 
         private static async Task PostData(string appName, string user, string summary)
         {
-            var processing = true;
-            while (processing)
+            var appInfo = new AppInfo()
             {
-                try
+                Id = string.Empty,
+                Date = DateTime.Now,
+                AppName = appName,
+                Summary = summary,
+                User = user,
+            };
+            await PostDataInner(appInfo);
+        }
+
+        private static async Task<bool> PostDataInner(AppInfo appInfo)
+        {
+            try
+            {
+                if((DateTime.Now - _updatedOn).TotalSeconds < 15)
                 {
-                    var handler = new HttpClientHandler
-                    {
-                        ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-                    };
-                    var client = new HttpClient(handler);
-
-                    // Set the base address to simplify maintenance & requests
-                    client.BaseAddress = new Uri(url);
-
-                    // Create an object
-                    var appInfo = new AppInfo()
-                    {
-                        Id = string.Empty,
-                        Date = DateTime.Now,
-                        AppName = appName,
-                        Summary = summary,
-                        User = user,
-                    };
-
-                    // Serialize class into JSON
-                    var payload = JsonConvert.SerializeObject(appInfo);
-
-                    // Wrap our JSON inside a StringContent object
-                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-                    // Post to the endpoint
-                    var response = await client.PostAsync("/appinfo", content);
-                    processing = false;
+                    throw new Exception();
                 }
-                catch
+                
+                var handler = new HttpClientHandler
                 {
-                }
+                    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+                };
+                var client = new HttpClient(handler);
+
+                // Set the base address to simplify maintenance & requests
+                client.BaseAddress = new Uri(_url);
+
+                // Serialize class into JSON
+                var payload = JsonConvert.SerializeObject(appInfo);
+
+                // Wrap our JSON inside a StringContent object
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                // Post to the endpoint
+                var response = await client.PostAsync("/appinfo", content);
+                return true;
             }
-
+            catch
+            {
+                if(!_failed.Contains(appInfo))
+                {
+                    _failed.Add(appInfo);
+                }
+                return false;
+            }
         }
 
         private static async Task<Helper> GetAppData()
@@ -227,7 +258,7 @@ namespace AppController
                     var client = new HttpClient(handler);
 
                     // Set the base address to simplify maintenance & requests
-                    client.BaseAddress = new Uri(url);
+                    client.BaseAddress = new Uri(_url);
 
                     // Post to the endpoint
 

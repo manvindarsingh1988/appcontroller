@@ -1,19 +1,19 @@
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, useLocation, matchPath } from "react-router-dom";
 import Home from "./Home";
 import Master from "./Master";
+import './App.css'
 
 export default function App() {
-  return (
-    
+  return (    
     <BrowserRouter>
-      <div className="App">
+      <div className="sticky">
           <ul className="App-header">
               <li>
-                  <Link to="/">Home</Link>
+                  <NavLink to="/" activeClassName="active" >Home</NavLink>
               </li>
               <li>
-                  <Link to="/Master">Master</Link>
+                  <NavLink to="/Master" activeClassName="active">Master</NavLink>
               </li>
           </ul>
           <Routes>

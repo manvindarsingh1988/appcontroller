@@ -266,7 +266,9 @@ function Pagination({
   pageOptions,
   pageIndex,
   pageSize,
-  setPageSize
+  setPageSize,
+  handleCheckboxSelection,
+  selectedFlatRows
 }) {
   return (
     <div className="pagination">
@@ -312,6 +314,7 @@ function Pagination({
           </option>
         ))}
       </select>
+      <button style={{position: 'absolute', right: '10px'}} onClick={() => handleCheckboxSelection(selectedFlatRows)}>Delete Selected</button>
     </div>
   );
 }
@@ -412,15 +415,12 @@ function Table({ columns, data, handleCheckboxSelection }) {
     pageOptions,
     pageIndex,
     pageSize,
-    setPageSize
+    setPageSize    
   };
 
   return (
     <>
-    <button onClick={() => handleCheckboxSelection(selectedFlatRows)}>
-        Delete
-      </button>
-      <Pagination {...paginationProps} />
+      <Pagination handleCheckboxSelection={handleCheckboxSelection} selectedFlatRows={selectedFlatRows} {...paginationProps} />
       <table {...getTableProps()}>
         <thead>
           {headerGroups.map(headerGroup => (
@@ -447,10 +447,15 @@ function Table({ columns, data, handleCheckboxSelection }) {
           {page.map((row, i) => {
             prepareRow(row);
             return (
-              <tr {...row.getRowProps()}>
+              <tr {...row.getRowProps()}
+              style={{
+                backgroundColor: !row.isSelected ? "" : "#04AA6D",
+                color: !row.isSelected ? "" : '#fff'
+               }}
+              >
                 {row.cells.map(cell => {
                   return (
-                    <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
+                    <td {...cell.getCellProps()} >{cell.render("Cell")}</td>
                   );
                 })}
               </tr>
@@ -459,11 +464,6 @@ function Table({ columns, data, handleCheckboxSelection }) {
         </tbody>
       </table>
       <Pagination {...paginationProps} />
-      <br />
-     
-      <button onClick={() => handleCheckboxSelection(selectedFlatRows)}>
-        Delete
-      </button>
     </>
   );
 }
@@ -538,6 +538,7 @@ function Home() {
         data: { ids: ids },
       })
       .then(response => {
+        alert(ids.length + ' row(s) deleted.')
         setUpdatedOn(new Date());
       })
       .catch(error => {
@@ -557,7 +558,7 @@ function Home() {
 
   return (  
     <Styles>
-      <Table columns={columns} data={appInfos} handleCheckboxSelection={handleDelete} />
+      <Table columns={columns} data={appInfos} handleCheckboxSelection={handleDelete}/>
     </Styles>
           
   );

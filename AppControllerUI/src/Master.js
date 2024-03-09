@@ -21,6 +21,9 @@ const Master = () => {
        }, [updatedOn]);
 
     const handleChange = (e) => {
+
+      if(window.confirm(e.target.checked ? 'Are you sure to change this flag, It will start killing apps on all linked systems?'
+      :'Are you sure to change this flag, It will stop killing apps on all linked systems?')) {
         setChecked(e.target.checked);
         const payload = {
             killApp: e.target.checked,
@@ -32,10 +35,13 @@ const Master = () => {
             }
           })
           .then(res => {
-        }) 
+        });
+      }
+        
     };
 
     const handleDelete = (id) => { 
+      if(window.confirm('Are you sure to delete this app or URL, It will start killing this app or URL on all linked systems?')) {
         const payload = {
             data: { id: id },
           }        
@@ -46,7 +52,8 @@ const Master = () => {
           })
           .then(res => {
             setUpdatedOn(new Date());
-        }) 
+        });
+      }
     };
 
     const handleNameAndType = (e) => { 
@@ -68,6 +75,7 @@ const Master = () => {
               })
               .then(res => {
                 setUpdatedOn(new Date());
+                setFormValues({ ...formValues, name: '' });
             }) 
         }
         
@@ -81,7 +89,7 @@ const Master = () => {
       }
   
     return (
-      <div>
+      <div style={{marginTop: "20px"}}>
         <label>
           <input
           style={{marginLeft: "20px"}}
