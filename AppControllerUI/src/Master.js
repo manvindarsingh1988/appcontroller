@@ -8,7 +8,8 @@ const Master = () => {
     const [apps, setApps] = useState([]);
     const [formValues, setFormValues] = useState({
         name: '',
-        type: 'URL'
+        type: 'URL',
+        userIP: ''
       });
     useEffect(() => {
         axios.get('https://manvindarsingh.bsite.net/appinfo/GetApplicationSettings')
@@ -65,7 +66,8 @@ const Master = () => {
         if(formValues.name) {
             const payload = {
                 name: formValues.name,
-                type: formValues.type
+                type: formValues.type,
+                userIP: formValues.userIP
               }
               
               axios.post("https://manvindarsingh.bsite.net/appinfo/AddURLOrApp", payload, {
@@ -75,7 +77,11 @@ const Master = () => {
               })
               .then(res => {
                 setUpdatedOn(new Date());
-                setFormValues({ ...formValues, name: '' });
+                setFormValues({
+                  name: '',
+                  type: 'URL',
+                  userIP: ''
+                });
             }) 
         }
         
@@ -109,11 +115,19 @@ const Master = () => {
                         onChange={handleNameAndType}
                     />
                 </label>
+                <label style={{marginLeft: "10px"}}>
+                    Enter User IP:
+                    <input style={{marginLeft: "5px"}} name='userIP'
+                        type="text"
+                        value={formValues.userIP}
+                        onChange={handleNameAndType}
+                    />
+                </label>
                 <label style={{marginLeft: "10px"}} >
                     Pick a Type:
-                    <select style={{marginLeft: "5px"}} id="selectedtype" name='type' onChange={handleNameAndType} value={formValues.value}>
+                    <select style={{marginLeft: "5px"}} id="selectedtype" name='type' onChange={handleNameAndType} value={formValues.type}>
                         <option value="URL">URL</option>
-                        <option value="App">APP</option>
+                        <option value="App">App</option>
                     </select>                    
                 </label>
                 <button style={{marginTop: "5px", marginBottom: "5px", marginLeft: "10px"}} onClick={handleSave}>Add</button> 
@@ -124,6 +138,7 @@ const Master = () => {
                     <thead>
                         <tr>
                             <th>Name</th>
+                            <th>User IP</th>
                             <th>Type</th>
                             <th></th>
                         </tr>
@@ -133,6 +148,7 @@ const Master = () => {
                             return (
                             <tr key={index}>
                                 <td>{item.name}</td>
+                                <td>{item.userIP}</td>
                                 <td>{item.type}</td>
                                 <td>
                                     <button onClick={() => handleDelete(item.id)} >Delete</button>

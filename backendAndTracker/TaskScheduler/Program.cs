@@ -29,18 +29,25 @@ namespace TaskScheduler
                 td.Settings.RunOnlyIfIdle = false;
                 
                 var tt = new LogonTrigger();
-                tt.Delay = new TimeSpan(0, 0, 30);
+                
                 td.Triggers.Add(tt);
+                var tt1 = new SessionStateChangeTrigger(TaskSessionStateChangeType.SessionUnlock);
+                td.Triggers.Add(tt1);
                 var path = AppDomain.CurrentDomain.BaseDirectory;
-                td.Actions.Add(new ExecAction($"\"\"{path}AppController.exe\"\"", null, null));
+                var st = string.Empty;
+                if (System.IO.File.Exists("StartProcess.bat"))
+                {
+                    st = System.IO.File.ReadAllText("StartProcess.bat");
+                    st = st.Replace("$Path$", $"{path}AppController.exe");
+                }
+                System.IO.File.WriteAllText("StartProcess.bat", st);
+                
+                td.Actions.Add(new ExecAction($"\"\"{path}StartProcess.bat\"\"", null, null));
                 
                 // Register the task in the root folder
-                ts.RootFolder.RegisterTaskDefinition(@"Test1", td);
-                var t = ts.AllTasks.FirstOrDefault(_ => _.Name == "Test1");
+                ts.RootFolder.RegisterTaskDefinition(@"AppControllerTask", td);
+                var t = ts.AllTasks.FirstOrDefault(_ => _.Name == "AppControllerTask");
                 var j = t.Run();
-                // Remove the task we just created
-                //ts.RootFolder.DeleteTask("Test1");
-                //ts.StartSystemTaskSchedulerManager();
             }
         }
     }

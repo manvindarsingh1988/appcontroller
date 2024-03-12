@@ -1,6 +1,7 @@
 using AppInfoController.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace AppInfoController.Controllers
 {
@@ -27,21 +28,79 @@ namespace AppInfoController.Controllers
         [Route("GetApplicationSettings")]
         public Helper GetApplicationSettings()
         {
-            using (var context = new AppControllerContext())
+            
+            lock (obj)
             {
-                var appInfos = context.AllowedAppsAndUrls.ToList();
-                bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
-                return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps };
+                using (var context = new AppControllerContext())
+                {
+                    var appInfos = context.AllowedAppsAndUrls.ToList();
+                    bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
+                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps };
+                }
+            }
+        }
+
+        [HttpGet]
+        [Route("GetApplicationSettingsByUser")]
+        public Helper GetApplicationSettingsByUser(string user)
+        {
+            lock (obj)
+            {
+                using (var context = new AppControllerContext())
+                {
+                    var userDetail = context.LastHitByUsers.FirstOrDefault(x => x.User == user);
+                    DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
+                    TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
+                    DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
+                    var time= iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
+                    var userIP = user.Substring(user.LastIndexOf('(') + 1, user.LastIndexOf(')') - user.LastIndexOf('(') - 1);
+                    if (userDetail != null)
+                    {
+                        userDetail.Date = time;
+                        userDetail.IP = userIP;
+                    }
+                    else
+                    {
+                        var lastHit = new LastHitByUser
+                        {
+                            User = user,
+                            Date = time,
+                            IP = userIP,
+                        };
+                        context.LastHitByUsers.Add(lastHit);
+                    }
+                    context.SaveChanges();
+                    var appInfos = context.AllowedAppsAndUrls.ToList();
+                    bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
+                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps };
+                }
+            }
+        }
+
+        [HttpGet]
+        [Route("GetLastHitByUserDetails")]
+        public IEnumerable<LastHitByUser> GetLastHitByUserDetails()
+        {
+            lock (obj)
+            {
+                using (var context = new AppControllerContext())
+                {
+                    var users = context.LastHitByUsers.ToList();
+                    return users;
+                }
             }
         }
 
         [HttpGet]
         [Route("GetValidURLs")]
-        public IEnumerable<string> GetValidURLs()
+        public IEnumerable<ValidURLWithIP> GetValidURLs()
         {
-            using (var context = new AppControllerContext())
+            lock (obj)
             {
-                return context.AllowedAppsAndUrls.Where(_ => _.Type == "URL").Select(_ => _.Name!).ToList();
+                using (var context = new AppControllerContext())
+                {
+                    return context.AllowedAppsAndUrls.Where(_ => _.Type == "URL").Select(_ => new ValidURLWithIP { Url = _.Name!, IP = _.UserIP! }).ToList();
+                }
             }
         }
 
@@ -81,6 +140,7 @@ namespace AppInfoController.Controllers
                 using (var db = new AppControllerContext())
                 {
                     appInfo.Id = Guid.NewGuid().ToString();
+                    appInfo.User = db.LastHitByUsers.FirstOrDefault(x => x.IP == appInfo.User)?.User ?? appInfo.User;
                     db.AppInfos.Add(appInfo);
                     db.SaveChanges();
                 }
@@ -132,6 +192,29 @@ namespace AppInfoController.Controllers
                 }
             }
         }
+
+        [HttpDelete]
+        [Route("DeleteLastHitDetail")]
+        public void DeleteLastHitDetail(IPWrapper item)
+        {
+            lock (obj)
+            {
+                List<string> _ = new();
+
+                try
+                {
+                    using (var db = new AppControllerContext())
+                    {
+                        var hit = db.LastHitByUsers.First(_ => _.IP == item.IP);
+                        db.LastHitByUsers.Remove(hit);
+                        db.SaveChanges();
+                    }
+                }
+                catch (Exception ex)
+                {
+                }
+            }
+        }
     }
 
     public class ItemsWrapper
@@ -144,8 +227,19 @@ namespace AppInfoController.Controllers
         public long Id { get; set; }
     }
 
+    public class IPWrapper
+    {
+        public string IP { get; set; }
+    }
+
     public class KillAppsHelper
     {
         public bool KillApp { get; set; }
+    }
+
+    public class ValidURLWithIP
+    {
+        public string Url { get; set; }
+        public string IP { get; set; }
     }
 }

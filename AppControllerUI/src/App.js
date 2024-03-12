@@ -1,7 +1,8 @@
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, NavLink, useLocation, matchPath } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import Home from "./Home";
 import Master from "./Master";
+import UserDetails from "./UserDetails";
 import './App.css'
 
 export default function App() {
@@ -15,6 +16,9 @@ export default function App() {
               <li>
                   <NavLink to="/Master" activeClassName="active">Master</NavLink>
               </li>
+              <li>
+                  <NavLink to="/UserDetails" activeClassName="active">User History</NavLink>
+              </li>
           </ul>
           <Routes>
               <Route
@@ -26,6 +30,11 @@ export default function App() {
                   exact
                   path="/Master"
                   element={<Master />}
+              ></Route>
+              <Route
+                  exact
+                  path="/UserDetails"
+                  element={<UserDetails />}
               ></Route>
           </Routes>
       </div>

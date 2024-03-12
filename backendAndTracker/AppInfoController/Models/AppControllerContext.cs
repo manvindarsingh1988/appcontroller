@@ -21,6 +21,8 @@ public partial class AppControllerContext : DbContext
 
     public virtual DbSet<AppSetting> AppSettings { get; set; }
 
+    public virtual DbSet<LastHitByUser> LastHitByUsers { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlite("Data Source=.\\Database\\AppController.db");
@@ -35,6 +37,11 @@ public partial class AppControllerContext : DbContext
         modelBuilder.Entity<AppInfo>(entity =>
         {
             entity.ToTable("AppInfo");
+        });
+
+        modelBuilder.Entity<LastHitByUser>(entity =>
+        {
+            entity.ToTable("LastHitByUser");
         });
 
         OnModelCreatingPartial(modelBuilder);

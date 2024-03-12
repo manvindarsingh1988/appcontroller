@@ -108,8 +108,11 @@ function dateBetweenFilterFn(rows, id, filterValues) {
   const ed = filterValues[1] ? new Date(filterValues[1]) : undefined;
   if (ed || sd) {
     return rows.filter((r) => {
-
-      const cellDate = new Date(r.values[id]);
+      let dateAndHour = r.values[id].split(" ");
+      var [day, month, year] = dateAndHour[0].split("-");
+      var [hours, minutes, seconds] = dateAndHour[1].split(":");
+      
+      const cellDate = new Date(year,month - 1,day,hours,minutes,seconds);
 
       if (ed && sd) {
         return cellDate >= sd && cellDate <= ed;
@@ -463,7 +466,7 @@ function Table({ columns, data, handleCheckboxSelection }) {
           })}
         </tbody>
       </table>
-      <Pagination {...paginationProps} />
+      <Pagination handleCheckboxSelection={handleCheckboxSelection} selectedFlatRows={selectedFlatRows} {...paginationProps} />
     </>
   );
 }
@@ -490,14 +493,7 @@ function Home() {
         columns: [
           {
             Header: "Date",
-            accessor: (d) => {
-              let dateAndHour = d.date.split("T");
-              var [year, month, day] = dateAndHour[0].split("-");
-              var date = [month, day, year].join("/");
-              var hour = dateAndHour[1];
-              var formattedData = date + " " + hour;
-              return formattedData;
-            },
+            accessor: "date",
             Filter: DateRangeColumnFilter,
             filter: dateBetweenFilterFn
           },

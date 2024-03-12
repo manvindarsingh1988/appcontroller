@@ -10,4 +10,6 @@ public partial class AllowedAppsAndUrl
     public string? Name { get; set; }
 
     public string? Type { get; set; }
+
+    public string? UserIP { get; set; }
 }

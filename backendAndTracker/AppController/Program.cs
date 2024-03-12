@@ -29,16 +29,16 @@ namespace AppController
 
         static void Main()
         {
-            var appHelper = GetAppData().Result;
-            
             var user = GetUser();
+            var appHelper = GetAppData(user).Result;
+
             try
             {
                 while (true)
                 {
-                    ProcessFailed();
-
                     UpdateAppSettings(ref appHelper, ref user);
+
+                    ProcessFailed();
 
                     CheckAndRemoveHoldProcesses(appHelper);
 
@@ -46,7 +46,7 @@ namespace AppController
 
                     NotifyOpenedBrowserTabs(user);
 
-                    Thread.Sleep(1000);
+                    Thread.Sleep(5000);
                 }
             }
             catch (Exception ex)
@@ -82,7 +82,10 @@ namespace AppController
 
         private static void NotifyAndKillOpenedProcesses(Helper appHelper, string user)
         {
-            var apps = appHelper.AllowedAppsAndUrls.Where(_ => _.Type == "App").Select(_ => _.Name);
+            var apps = appHelper.AllowedAppsAndUrls
+                .Where(_ => _.Type == "App" && (string.IsNullOrEmpty(_.UserIP) || (!string.IsNullOrEmpty(_.UserIP) && user.Contains(_.UserIP))))
+                .Select(_ => _.Name);
+
             var processes = Process.GetProcesses().Where(_ => _.MainWindowHandle != IntPtr.Zero && !apps.Contains(_.ProcessName));
             foreach (Process p in processes)
             {
@@ -161,9 +164,9 @@ namespace AppController
         {
             if ((DateTime.Now - _updatedOn).TotalMinutes > 2)
             {
-                appHelper = GetAppData().Result;
-                _updatedOn = DateTime.Now;
                 user = GetUser();
+                appHelper = GetAppData(user).Result;
+                _updatedOn = DateTime.Now;
             }
         }
 
@@ -197,7 +200,7 @@ namespace AppController
             var appInfo = new AppInfo()
             {
                 Id = string.Empty,
-                Date = DateTime.Now,
+                Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"),
                 AppName = appName,
                 Summary = summary,
                 User = user,
@@ -243,7 +246,7 @@ namespace AppController
             }
         }
 
-        private static async Task<Helper> GetAppData()
+        private static async Task<Helper> GetAppData(string user)
         {
             var processing = true;
             Helper helper = null;
@@ -265,10 +268,12 @@ namespace AppController
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     //GET Method
-                    var response = await client.GetAsync("/appinfo/GetApplicationSettings");
+                    
+                    var response = await client.GetAsync($"/appinfo/GetApplicationSettingsByUser?user={user}");
                     if (response.IsSuccessStatusCode)
                     {
                         helper = await response.Content.ReadAsAsync<Helper>();
+                        helper.AllowedAppsAndUrls.Add(new AllowedAppsAndUrl { Name = "AppController", Type = "App" });
                         processing = false;
                     }
                 }
@@ -293,13 +298,15 @@ namespace AppController
         public string Name { get; set; }
 
         public string Type { get; set; }
+
+        public string UserIP { get; set; }
     }
 
     public class AppInfo
     {
         public string Id { get; set; }
 
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
 
         public string User { get; set; }
 
