@@ -31,7 +31,6 @@ const Styles = styled.div`
   table {
     border-spacing: 0;
     border: 1px solid black;
-
     tr {
       :last-child {
         td {
@@ -45,7 +44,9 @@ const Styles = styled.div`
       margin: 0;
       padding: 0.5rem;
       border-bottom: 1px solid black;
-      border-right: 1px solid black;      
+      border-right: 1px solid black; 
+      max-width: 500px;
+      word-wrap: break-word;
     }
   }
   .pagination {
