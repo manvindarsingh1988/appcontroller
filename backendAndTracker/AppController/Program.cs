@@ -21,7 +21,7 @@ namespace AppController
         /// </summary>
         /// 
         private static List<int> _processIds = new List<int>();
-        private static Dictionary<long, List<Tuple<string, string>>> _browserProcessIds = new Dictionary<long, List<Tuple<string, string>>>();
+        //private static Dictionary<long, List<Tuple<string, string>>> _browserProcessIds = new Dictionary<long, List<Tuple<string, string>>>();
         private static string _url = "https://manvindarsingh.bsite.net";
         private static DateTime _updatedOn = DateTime.Now;
         private static string _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
@@ -44,7 +44,7 @@ namespace AppController
 
                     NotifyAndKillOpenedProcesses(appHelper, user);
 
-                    NotifyOpenedBrowserTabs(user);
+                    //NotifyOpenedBrowserTabs(user);
 
                     Thread.Sleep(5000);
                 }
@@ -112,53 +112,53 @@ namespace AppController
             }
         }
 
-        private static void NotifyOpenedBrowserTabs(string user)
-        {
-            List<Process> procsChrome = Process.GetProcessesByName("chrome").ToList();
-            procsChrome.AddRange(Process.GetProcessesByName("msedge"));
-            foreach (Process proc in procsChrome)
-            {
-                // the chrome process must have a window 
-                if (proc.MainWindowHandle == IntPtr.Zero)
-                {
-                    continue;
-                }
-                AutomationElement root = AutomationElement.FromHandle(proc.MainWindowHandle);
-                Condition condition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.TabItem);
-                var tabs = root.FindAll(TreeScope.Descendants, condition);
-                foreach (AutomationElement tabitem in tabs)
-                {
-                    if (_browserProcessIds.ContainsKey(proc.Id))
-                    {
-                        if (!string.IsNullOrEmpty(tabitem.Current.Name))
-                        {
-                            var matchedItem = _browserProcessIds[proc.Id].FirstOrDefault(_ => _.Item1 == tabitem.Current.AutomationId && _.Item2 == tabitem.Current.Name);
-                            if (matchedItem == null)
-                            {
-                                var t = Task.Run(async () =>
-                                {
-                                    await PostData(proc.ProcessName, user, tabitem.Current.Name);
-                                    _browserProcessIds[proc.Id].Add(new Tuple<string, string>(tabitem.Current.AutomationId, tabitem.Current.Name));
-                                });
-                                t.Wait();
-                            }
-                        }
-                    }
-                    else
-                    {
-                        var t = Task.Run(async () =>
-                        {
-                            if (!string.IsNullOrEmpty(tabitem.Current.Name))
-                            {
-                                await PostData(proc.ProcessName, user, tabitem.Current.Name);
-                                _browserProcessIds.Add(proc.Id, new List<Tuple<string, string>> { new Tuple<string, string>(tabitem.Current.AutomationId, tabitem.Current.Name) });
-                            }
-                        });
-                        t.Wait();
-                    }
-                }
-            }
-        }
+        //private static void NotifyOpenedBrowserTabs(string user)
+        //{
+        //    List<Process> procsChrome = Process.GetProcessesByName("chrome").ToList();
+        //    procsChrome.AddRange(Process.GetProcessesByName("msedge"));
+        //    foreach (Process proc in procsChrome)
+        //    {
+        //        // the chrome process must have a window 
+        //        if (proc.MainWindowHandle == IntPtr.Zero)
+        //        {
+        //            continue;
+        //        }
+        //        AutomationElement root = AutomationElement.FromHandle(proc.MainWindowHandle);
+        //        Condition condition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.TabItem);
+        //        var tabs = root.FindAll(TreeScope.Descendants, condition);
+        //        foreach (AutomationElement tabitem in tabs)
+        //        {
+        //            if (_browserProcessIds.ContainsKey(proc.Id))
+        //            {
+        //                if (!string.IsNullOrEmpty(tabitem.Current.Name))
+        //                {
+        //                    var matchedItem = _browserProcessIds[proc.Id].FirstOrDefault(_ => _.Item1 == tabitem.Current.AutomationId && _.Item2 == tabitem.Current.Name);
+        //                    if (matchedItem == null)
+        //                    {
+        //                        var t = Task.Run(async () =>
+        //                        {
+        //                            await PostData(proc.ProcessName, user, tabitem.Current.Name);
+        //                            _browserProcessIds[proc.Id].Add(new Tuple<string, string>(tabitem.Current.AutomationId, tabitem.Current.Name));
+        //                        });
+        //                        t.Wait();
+        //                    }
+        //                }
+        //            }
+        //            else
+        //            {
+        //                var t = Task.Run(async () =>
+        //                {
+        //                    if (!string.IsNullOrEmpty(tabitem.Current.Name))
+        //                    {
+        //                        await PostData(proc.ProcessName, user, tabitem.Current.Name);
+        //                        _browserProcessIds.Add(proc.Id, new List<Tuple<string, string>> { new Tuple<string, string>(tabitem.Current.AutomationId, tabitem.Current.Name) });
+        //                    }
+        //                });
+        //                t.Wait();
+        //            }
+        //        }
+        //    }
+        //}
 
         private static void UpdateAppSettings(ref Helper appHelper, ref string user)
         {

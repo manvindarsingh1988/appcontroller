@@ -3,6 +3,8 @@ using Microsoft.Win32.TaskScheduler;
 using System.Security.Principal;
 using System;
 using System.Linq;
+using System.IO;
+using System.Net;
 
 namespace TaskScheduler
 {
@@ -10,8 +12,24 @@ namespace TaskScheduler
     {
         static void Main(string[] args)
         {
+            string _userInner = WindowsIdentity.GetCurrent().Name.Replace(@"\","\\\\");
+            string hostName = Dns.GetHostName();
+            var ip = Dns.GetHostByName(hostName).AddressList[0].ToString();
+            if (File.Exists("extension/js/background.js"))
+            {
+                var js = System.IO.File.ReadAllText("extension/js/background.js");
+                js = js.Replace("$user$", _userInner + " (" + ip + ")");
+                File.WriteAllText("extension/js/background.js", js);
+            }
+            
             using (TaskService ts = new TaskService())
             {
+                var task = ts.AllTasks.FirstOrDefault(_ => _.Name == "AppControllerTask");
+                if(task != null)
+                {
+                    ts.RootFolder.DeleteTask("AppControllerTask");
+                }
+
                 TaskDefinition td = ts.NewTask();
 
                 td.Principal.RunLevel = TaskRunLevel.Highest;
@@ -39,8 +57,9 @@ namespace TaskScheduler
                 {
                     st = System.IO.File.ReadAllText("StartProcess.bat");
                     st = st.Replace("$Path$", $"{path}AppController.exe");
+                    File.WriteAllText("StartProcess.bat", st);
                 }
-                System.IO.File.WriteAllText("StartProcess.bat", st);
+                
                 
                 td.Actions.Add(new ExecAction($"\"\"{path}StartProcess.bat\"\"", null, null));
                 
