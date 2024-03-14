@@ -83,7 +83,7 @@ namespace AppController
         private static void NotifyAndKillOpenedProcesses(Helper appHelper, string user)
         {
             var apps = appHelper.AllowedAppsAndUrls
-                .Where(_ => _.Type == "App" && (string.IsNullOrEmpty(_.UserIP) || (!string.IsNullOrEmpty(_.UserIP) && user.Contains(_.UserIP))))
+                .Where(_ => _.Type == "App" && (string.IsNullOrEmpty(_.User) || (!string.IsNullOrEmpty(_.User) && user.Contains(_.User))))
                 .Select(_ => _.Name);
 
             var processes = Process.GetProcesses().Where(_ => _.MainWindowHandle != IntPtr.Zero && !apps.Contains(_.ProcessName));
@@ -172,8 +172,7 @@ namespace AppController
 
         private static string GetUser()
         {
-            string myIP = GetIP();
-            return _userInner + " (" + myIP + ")";
+            return _userInner;
         }
 
         private static void CheckAndRemoveHoldProcesses(Helper appHelper)
@@ -187,12 +186,6 @@ namespace AppController
                 }
                 _processIds.Clear();
             }
-        }
-
-        private static string GetIP()
-        {
-            string hostName = Dns.GetHostName();
-            return Dns.GetHostByName(hostName).AddressList[0].ToString();
         }
 
         private static async Task PostData(string appName, string user, string summary)
@@ -299,7 +292,7 @@ namespace AppController
 
         public string Type { get; set; }
 
-        public string UserIP { get; set; }
+        public string User { get; set; }
     }
 
     public class AppInfo

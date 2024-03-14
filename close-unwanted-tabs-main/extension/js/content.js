@@ -6,7 +6,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     const isValid = urls.some(
       (u) =>
       message.urlToCheck.includes(u.url)  &&
-        (u.ip.trim() === "" || data.User == u.ip)
+        (u.user.trim() === "" || data.User == u.user)
     );
     if (!isValid) {
       alert("Warning!! Restricted site...");

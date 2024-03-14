@@ -11,5 +11,5 @@ public partial class AllowedAppsAndUrl
 
     public string? Type { get; set; }
 
-    public string? UserIP { get; set; }
+    public string? User { get; set; }
 }

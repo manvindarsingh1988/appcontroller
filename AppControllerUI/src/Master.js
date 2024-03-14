@@ -9,7 +9,7 @@ const Master = () => {
     const [formValues, setFormValues] = useState({
         name: '',
         type: 'URL',
-        userIP: ''
+        user: ''
       });
     useEffect(() => {
         axios.get('https://manvindarsingh.bsite.net/appinfo/GetApplicationSettings')
@@ -67,7 +67,7 @@ const Master = () => {
             const payload = {
                 name: formValues.name,
                 type: formValues.type,
-                userIP: formValues.userIP
+                user: formValues.user
               }
               
               axios.post("https://manvindarsingh.bsite.net/appinfo/AddURLOrApp", payload, {
@@ -80,7 +80,7 @@ const Master = () => {
                 setFormValues({
                   name: '',
                   type: 'URL',
-                  userIP: ''
+                  user: ''
                 });
             }) 
         }
@@ -105,6 +105,7 @@ const Master = () => {
           />
           Kill Apps
         </label>
+        <p><b>Allowed Apps:</b></p>
         <div style={st}>
             <div>
                 <label>
@@ -116,10 +117,10 @@ const Master = () => {
                     />
                 </label>
                 <label style={{marginLeft: "10px"}}>
-                    Enter User IP:
-                    <input style={{marginLeft: "5px"}} name='userIP'
+                    Enter User:
+                    <input style={{marginLeft: "5px"}} name='user'
                         type="text"
-                        value={formValues.userIP}
+                        value={formValues.user}
                         onChange={handleNameAndType}
                     />
                 </label>
@@ -138,7 +139,7 @@ const Master = () => {
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>User IP</th>
+                            <th>User</th>
                             <th>Type</th>
                             <th></th>
                         </tr>
@@ -148,7 +149,7 @@ const Master = () => {
                             return (
                             <tr key={index}>
                                 <td>{item.name}</td>
-                                <td>{item.userIP}</td>
+                                <td>{item.user}</td>
                                 <td>{item.type}</td>
                                 <td>
                                     <button onClick={() => handleDelete(item.id)} >Delete</button>

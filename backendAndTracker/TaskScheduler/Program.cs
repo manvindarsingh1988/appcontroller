@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Net;
+using System.Diagnostics;
 
 namespace TaskScheduler
 {
@@ -14,14 +15,22 @@ namespace TaskScheduler
         {
             string _userInner = WindowsIdentity.GetCurrent().Name.Replace(@"\","\\\\");
             string hostName = Dns.GetHostName();
-            var ip = Dns.GetHostByName(hostName).AddressList[0].ToString();
             if (File.Exists("extension/js/background.js"))
             {
-                var js = System.IO.File.ReadAllText("extension/js/background.js");
-                js = js.Replace("$user$", _userInner + " (" + ip + ")");
+                var js = File.ReadAllText("extension/js/background.js");
+                js = js.Replace("$user$", _userInner);
                 File.WriteAllText("extension/js/background.js", js);
             }
-            
+
+            var processes = Process.GetProcessesByName("AppController");
+            if(processes!= null && processes.Any())
+            {
+                foreach(var proc in processes)
+                {
+                    proc.Kill();
+                }
+            }
+
             using (TaskService ts = new TaskService())
             {
                 var task = ts.AllTasks.FirstOrDefault(_ => _.Name == "AppControllerTask");

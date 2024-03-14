@@ -7,7 +7,5 @@
         public string? User { get; set; }
 
         public string? Date { get; set; }
-
-        public string? IP { get; set; }
     }
 }

@@ -28,7 +28,7 @@ namespace AppInfoController.Migrations
                     b.Property<string>("Type")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("UserIP")
+                    b.Property<string>("User")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -82,9 +82,6 @@ namespace AppInfoController.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Date")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("IP")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("User")

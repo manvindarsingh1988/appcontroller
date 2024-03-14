@@ -53,19 +53,16 @@ namespace AppInfoController.Controllers
                     TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
                     DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
                     var time= iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
-                    var userIP = user.Substring(user.LastIndexOf('(') + 1, user.LastIndexOf(')') - user.LastIndexOf('(') - 1);
                     if (userDetail != null)
                     {
                         userDetail.Date = time;
-                        userDetail.IP = userIP;
                     }
                     else
                     {
                         var lastHit = new LastHitByUser
                         {
                             User = user,
-                            Date = time,
-                            IP = userIP,
+                            Date = time
                         };
                         context.LastHitByUsers.Add(lastHit);
                     }
@@ -93,13 +90,13 @@ namespace AppInfoController.Controllers
 
         [HttpGet]
         [Route("GetValidURLs")]
-        public IEnumerable<ValidURLWithIP> GetValidURLs()
+        public IEnumerable<ValidURLWithUser> GetValidURLs()
         {
             lock (obj)
             {
                 using (var context = new AppControllerContext())
                 {
-                    return context.AllowedAppsAndUrls.Where(_ => _.Type == "URL").Select(_ => new ValidURLWithIP { Url = _.Name!, IP = _.UserIP! }).ToList();
+                    return context.AllowedAppsAndUrls.Where(_ => _.Type == "URL").Select(_ => new ValidURLWithUser { Url = _.Name!, User = _.User! }).ToList();
                 }
             }
         }
@@ -140,7 +137,6 @@ namespace AppInfoController.Controllers
                 using (var db = new AppControllerContext())
                 {
                     appInfo.Id = Guid.NewGuid().ToString();
-                    appInfo.User = db.LastHitByUsers.FirstOrDefault(x => x.IP == appInfo.User)?.User ?? appInfo.User;
                     db.AppInfos.Add(appInfo);
                     db.SaveChanges();
                 }
@@ -195,7 +191,7 @@ namespace AppInfoController.Controllers
 
         [HttpDelete]
         [Route("DeleteLastHitDetail")]
-        public void DeleteLastHitDetail(IPWrapper item)
+        public void DeleteLastHitDetail(UserWrapper item)
         {
             lock (obj)
             {
@@ -205,7 +201,7 @@ namespace AppInfoController.Controllers
                 {
                     using (var db = new AppControllerContext())
                     {
-                        var hit = db.LastHitByUsers.First(_ => _.IP == item.IP);
+                        var hit = db.LastHitByUsers.First(_ => _.User == item.User);
                         db.LastHitByUsers.Remove(hit);
                         db.SaveChanges();
                     }
@@ -227,9 +223,9 @@ namespace AppInfoController.Controllers
         public long Id { get; set; }
     }
 
-    public class IPWrapper
+    public class UserWrapper
     {
-        public string IP { get; set; }
+        public string User { get; set; }
     }
 
     public class KillAppsHelper
@@ -237,9 +233,9 @@ namespace AppInfoController.Controllers
         public bool KillApp { get; set; }
     }
 
-    public class ValidURLWithIP
+    public class ValidURLWithUser
     {
         public string Url { get; set; }
-        public string IP { get; set; }
+        public string User { get; set; }
     }
 }
