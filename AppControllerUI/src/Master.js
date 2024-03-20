@@ -5,6 +5,7 @@ import './Master.css';
 const Master = () => {
     const [updatedOn, setUpdatedOn] = useState(0)
     const [checked, setChecked] = useState(false);
+    const [validity, setValidity] = useState(0);
     const [apps, setApps] = useState([]);
     const [formValues, setFormValues] = useState({
         name: '',
@@ -12,11 +13,12 @@ const Master = () => {
         user: ''
       });
     useEffect(() => {
-        axios.get('https://manvindarsingh.bsite.net/appinfo/GetApplicationSettings')
+        axios.get('https://www.appcontroller.in/appinfo/GetApplicationSettings')
         .then(res => {
             console.log(res.data);
             setChecked(res.data.killApps);
-            setApps(res.data.allowedAppsAndUrls)
+            setApps(res.data.allowedAppsAndUrls);
+            setValidity(res.data.userValidity);
         }) 
         .catch(err => console.log(err));
        }, [updatedOn]);
@@ -30,7 +32,7 @@ const Master = () => {
             killApp: e.target.checked,
           }
           
-          axios.post("https://manvindarsingh.bsite.net/appinfo/AddKillAppSetting", payload, {
+          axios.post("https://www.appcontroller.in/appinfo/AddKillAppSetting", payload, {
             headers: {
               'Content-Type': 'application/json'
             }
@@ -44,9 +46,9 @@ const Master = () => {
     const handleDelete = (id) => { 
       if(window.confirm('Are you sure to delete this app or URL, It will start killing this app or URL on all linked systems?')) {
         const payload = {
-            data: { id: id },
+            id: id
           }        
-          axios.delete("https://manvindarsingh.bsite.net/appinfo/DeleteURLOrApp", payload, {
+          axios.post("https://www.appcontroller.in/appinfo/DeleteURLOrApp", payload, {
             headers: {
               'Content-Type': 'application/json'
             }
@@ -70,7 +72,7 @@ const Master = () => {
                 user: formValues.user
               }
               
-              axios.post("https://manvindarsingh.bsite.net/appinfo/AddURLOrApp", payload, {
+              axios.post("https://www.appcontroller.in/appinfo/AddURLOrApp", payload, {
                 headers: {
                   'Content-Type': 'application/json'
                 }
@@ -86,6 +88,25 @@ const Master = () => {
         }
         
     };
+
+    const updateValidity = () => {
+      if(validity) {
+          const payload = {
+              validity: validity
+            }
+            
+            axios.post("https://www.appcontroller.in/appinfo/UpdateValidity", payload, {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            })
+            .then(res => {
+              alert('Active time updated successfully.')
+              setUpdatedOn(new Date());
+          }) 
+      }
+      
+  };
 
     const st = {
         width: 'auto',
@@ -105,6 +126,17 @@ const Master = () => {
           />
           Kill Apps
         </label>
+        <div style={st}>
+          <label style={{marginLeft: "10px"}}>
+          User Active Check Time in Minutes:
+                    <input style={{marginLeft: "5px"}} name='user'
+                        type="text"
+                        value={validity}
+                        onChange={e => setValidity(e.target.value)}
+                    />
+                </label>
+                <button style={{marginTop: "5px", marginBottom: "5px", marginLeft: "10px"}} onClick={updateValidity}>Update</button>
+        </div>
         <p><b>Allowed Apps:</b></p>
         <div style={st}>
             <div>

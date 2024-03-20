@@ -366,3 +366,9 @@
 /backendAndTracker/TaskScheduler/obj/Release/TaskScheduler.csproj.FileListAbsolute.txt
 /backendAndTracker/TaskScheduler/obj/Release/TaskScheduler.exe
 /backendAndTracker/TaskScheduler/obj/Release/TaskScheduler.pdb
+/backendAndTracker/AppInfoController/bin/Release/net6.0/publish/wwwroot/*.png
+/backendAndTracker/AppInfoController/bin/Release/net6.0/publish/wwwroot/*.json
+/backendAndTracker/AppInfoController/obj/Release/net6.0/*.BuildWithSkipAnalyzers
+/backendAndTracker/AppInfoController/obj/Release/net6.0/PubTmp/*.xml
+/backendAndTracker/AppInfoController/obj/Release/net6.0/PubTmp/Out/wwwroot/*.png
+/backendAndTracker/AppInfoController/obj/Release/net6.0/PubTmp/Out/wwwroot/*.json

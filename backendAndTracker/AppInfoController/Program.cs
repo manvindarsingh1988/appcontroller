@@ -1,3 +1,5 @@
+using AppInfoController.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+using (var Scope = app.Services.CreateScope())
+{
+    var context = new AppControllerContext();
+    context.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 app.UseRouting();

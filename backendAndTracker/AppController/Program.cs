@@ -22,7 +22,7 @@ namespace AppController
         /// 
         private static List<int> _processIds = new List<int>();
         //private static Dictionary<long, List<Tuple<string, string>>> _browserProcessIds = new Dictionary<long, List<Tuple<string, string>>>();
-        private static string _url = "https://manvindarsingh.bsite.net";
+        private static string _url = "https://www.appcontroller.in/";
         private static DateTime _updatedOn = DateTime.Now;
         private static string _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
         private static List<AppInfo> _failed = new List<AppInfo>();
@@ -40,7 +40,7 @@ namespace AppController
 
                     ProcessFailed();
 
-                    CheckAndRemoveHoldProcesses(appHelper);
+                    CheckAndRemoveHoldProcesses(appHelper, user);
 
                     NotifyAndKillOpenedProcesses(appHelper, user);
 
@@ -51,64 +51,105 @@ namespace AppController
             }
             catch (Exception ex)
             {
-                var st = string.Empty;
-                if (System.IO.File.Exists("test.txt"))
-                {
-                    st = System.IO.File.ReadAllText("test.txt");
-                }
-                System.IO.File.WriteAllText("test.txt", st + Environment.NewLine + ex.Message);
+                WriteException(ex);
             }
+        }
+
+        private static void WriteException(Exception ex)
+        {
+            var st = string.Empty;
+            if (System.IO.File.Exists("test.txt"))
+            {
+                st = System.IO.File.ReadAllText("test.txt");
+            }
+            System.IO.File.WriteAllText("test.txt", st + Environment.NewLine + ex.Message);
         }
 
         private static void ProcessFailed()
         {
-            if(_failed.Any())
+            try
             {
-                var processing = _failed.ToList();
-                foreach (var item in processing)
+                if (_failed.Any())
                 {
-                    var t = Task.Run(async () =>
+                    var processing = _failed.ToList();
+                    foreach (var item in processing)
                     {
-                        var result = await PostDataInner(item);
-                        if(result)
+                        try
                         {
-                            _failed.Remove(item);
+                            var t = Task.Run(async () =>
+                            {
+                                var result = await PostDataInner(item);
+                                if (result)
+                                {
+                                    _failed.Remove(item);
+                                }
+                            });
+                            t.Wait();
                         }
-                    });
-                    t.Wait();
+                        catch (Exception ex)
+                        {
+                            WriteException(ex);
+                        }
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
+                WriteException(ex);
             }
         }
 
         private static void NotifyAndKillOpenedProcesses(Helper appHelper, string user)
         {
-            var apps = appHelper.AllowedAppsAndUrls
+            try
+            {
+                var apps = appHelper.AllowedAppsAndUrls
                 .Where(_ => _.Type == "App" && (string.IsNullOrEmpty(_.User) || (!string.IsNullOrEmpty(_.User) && user.Contains(_.User))))
                 .Select(_ => _.Name);
 
-            var processes = Process.GetProcesses().Where(_ => _.MainWindowHandle != IntPtr.Zero && !apps.Contains(_.ProcessName));
-            foreach (Process p in processes)
-            {
-                if (!string.IsNullOrEmpty(p.MainWindowTitle))
+                var processes = Process.GetProcesses().Where(_ => _.MainWindowHandle != IntPtr.Zero && !apps.Contains(_.ProcessName));
+                foreach (Process p in processes)
                 {
-                    if (appHelper.KillApps)
+                    try
                     {
-                        p.Kill();
-                    }
-
-                    var t = Task.Run(async () =>
-                    {
-                        if (!_processIds.Contains(p.Id))
+                        if (!string.IsNullOrEmpty(p.MainWindowTitle))
                         {
-                            await PostData(p.ProcessName, user, p.MainWindowTitle);
+                            if (appHelper.KillApps)
+                            {
+                                var ta = Task.Run(async () =>
+                                {
+                                    if (!_processIds.Contains(p.Id))
+                                    {
+                                        await PostData(p.ProcessName, user, p.MainWindowTitle + " being killed.");
+                                    }
+                                });
+                                ta.Wait();
+                                p?.Kill();
+                            }
+
+                            var t = Task.Run(async () =>
+                            {
+                                if (!_processIds.Contains(p.Id))
+                                {
+                                    await PostData(p.ProcessName, user, p.MainWindowTitle);
+                                }
+                            });
+                            t.Wait();
+                            if (!appHelper.KillApps && !_processIds.Contains(p.Id))
+                            {
+                                _processIds.Add(p.Id);
+                            }
                         }
-                    });
-                    t.Wait();
-                    if (!appHelper.KillApps && !_processIds.Contains(p.Id))
+                    }
+                    catch (Exception ex)
                     {
-                        _processIds.Add(p.Id);
+                        WriteException(ex);
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                WriteException(ex);
             }
         }
 
@@ -162,11 +203,18 @@ namespace AppController
 
         private static void UpdateAppSettings(ref Helper appHelper, ref string user)
         {
-            if ((DateTime.Now - _updatedOn).TotalMinutes > 2)
+            try
             {
-                user = GetUser();
-                appHelper = GetAppData(user).Result;
-                _updatedOn = DateTime.Now;
+                if ((DateTime.Now - _updatedOn).TotalMinutes > 2)
+                {
+                    user = GetUser();
+                    appHelper = GetAppData(user).Result;
+                    _updatedOn = DateTime.Now;
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteException(ex);
             }
         }
 
@@ -175,17 +223,46 @@ namespace AppController
             return _userInner;
         }
 
-        private static void CheckAndRemoveHoldProcesses(Helper appHelper)
+        private static void CheckAndRemoveHoldProcesses(Helper appHelper, string user)
         {
-            if (_processIds.Any() && appHelper.KillApps)
+            try
             {
-                foreach (var processId in _processIds)
+                if (_processIds.Any() && appHelper.KillApps)
                 {
-                    var p = Process.GetProcessById(processId);
-                    p?.Kill();
+                    var apps = appHelper.AllowedAppsAndUrls
+                    .Where(_ => _.Type == "App" && (string.IsNullOrEmpty(_.User) || (!string.IsNullOrEmpty(_.User) && user.Contains(_.User))))
+                    .Select(_ => _.Name);
+                    foreach (var processId in _processIds)
+                    {
+                        try
+                        {
+                            var p = Process.GetProcessById(processId);
+                            if (!apps.Contains(p.ProcessName))
+                            {
+                                var ta = Task.Run(async () =>
+                                {
+                                    if (!_processIds.Contains(p.Id))
+                                    {
+                                        await PostData(p.ProcessName, user, p.MainWindowTitle + " being killed.");
+                                    }
+                                });
+                                ta.Wait();
+                                p?.Kill();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteException(ex);
+                        }
+                    }
+                    _processIds.Clear();
                 }
-                _processIds.Clear();
             }
+            catch (Exception ex)
+            {
+                WriteException(ex);
+            }
+            
         }
 
         private static async Task PostData(string appName, string user, string summary)
@@ -229,8 +306,9 @@ namespace AppController
                 var response = await client.PostAsync("/appinfo", content);
                 return true;
             }
-            catch
+            catch(Exception ex)
             {
+                WriteException(ex);
                 if(!_failed.Contains(appInfo))
                 {
                     _failed.Add(appInfo);
@@ -270,8 +348,9 @@ namespace AppController
                         processing = false;
                     }
                 }
-                catch
+                catch( Exception ex)
                 {
+                    WriteException(ex);
                 }
             }
             return helper;

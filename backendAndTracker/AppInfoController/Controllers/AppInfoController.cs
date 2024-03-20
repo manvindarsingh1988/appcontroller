@@ -2,6 +2,7 @@ using AppInfoController.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Text;
 
 namespace AppInfoController.Controllers
 {
@@ -35,7 +36,8 @@ namespace AppInfoController.Controllers
                 {
                     var appInfos = context.AllowedAppsAndUrls.ToList();
                     bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
-                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps };
+                    var userValidity = int.Parse(context.AppSettings.First(x => x.Name == "UserValidity")?.Value ?? "10");
+                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, UserValidity =  userValidity};
                 }
             }
         }
@@ -80,9 +82,27 @@ namespace AppInfoController.Controllers
         {
             lock (obj)
             {
+                DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
+                TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
+                DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
                 using (var context = new AppControllerContext())
                 {
+                    var userValidity = int.Parse(context.AppSettings.First(x => x.Name == "UserValidity")?.Value ?? "10");
                     var users = context.LastHitByUsers.ToList();
+                    users.ForEach(_ => 
+                    {
+                        var d = _.Date?.Split(' ');
+                        var da = d[0].Split(new char[2] { '/', '-'} );
+                        var y = Convert.ToInt32(da.Last());
+                        var m = Convert.ToInt32(da[1]);
+                        var day = Convert.ToInt32(da[0]);
+                        var da1 = d[1].Split(":");
+                        var h = Convert.ToInt32(da1[0]);
+                        var mi = Convert.ToInt32(da1[1]);
+                        var s = Convert.ToInt32(da1[2]);
+                        var date = new DateTime(y, m, day, h, mi, s);
+                        _.Inactive = (iSTTime - date).TotalMinutes > userValidity;
+                    });
                     return users;
                 }
             }
@@ -129,6 +149,42 @@ namespace AppInfoController.Controllers
             }
         }
 
+
+        [HttpPost]
+        [Route("UpdateValidity")]
+        public void UpdateValidity(UpdateUserValidity validity)
+        {
+            lock (obj)
+            {
+                using (var db = new AppControllerContext())
+                {
+                    db.AppSettings.First(x => x.Name == "UserValidity").Value = validity.Validity.ToString();
+                    db.SaveChanges();
+                }
+            }
+        }
+
+        [HttpPost]
+        [Route("UpdateUserDetail")]
+        public void UpdateUserDetail(LastHitByUser user)
+        {
+            lock (obj)
+            {
+                using (var db = new AppControllerContext())
+                {
+                    var userDetail = db.LastHitByUsers.FirstOrDefault(x => x.User == user.User);
+                    if(userDetail != null)
+                    {
+                        userDetail.Name = user.Name;
+                        userDetail.MobileNo = user.MobileNo;
+                        userDetail.City = user.City;
+                        userDetail.Address = user.Address;
+                        db.SaveChanges();
+                    }
+                }
+            }
+        }
+
         [HttpPost]
         public void Post(AppInfo appInfo)
         {
@@ -136,6 +192,31 @@ namespace AppInfoController.Controllers
             {
                 using (var db = new AppControllerContext())
                 {
+                    var userInfo = db.LastHitByUsers.FirstOrDefault(_ => _.User == appInfo.User);
+                    if(userInfo != null)
+                    {
+                        var st = new StringBuilder();
+                        if(!string.IsNullOrEmpty(userInfo.Name))
+                        {
+                            st.Append("Name: " + userInfo.Name + " ");
+                        }
+                        if (!string.IsNullOrEmpty(userInfo.City))
+                        {
+                            st.Append("City: " + userInfo.City + " ");
+                        }
+                        if (!string.IsNullOrEmpty(userInfo.MobileNo))
+                        {
+                            st.Append("Mobile: " + userInfo.MobileNo + " ");
+                        }
+                        if (!string.IsNullOrEmpty(userInfo.Address))
+                        {
+                            st.Append("Address: " + userInfo.Address + " ");
+                        }
+                        if(!string.IsNullOrEmpty(st.ToString()))
+                        {
+                            appInfo.User = $"{appInfo.User} ({st.ToString().Trim()})";
+                        }
+                    }
                     appInfo.Id = Guid.NewGuid().ToString();
                     db.AppInfos.Add(appInfo);
                     db.SaveChanges();
@@ -143,8 +224,9 @@ namespace AppInfoController.Controllers
             }
         }
 
-        [HttpDelete]
-        public void Delete(ItemsWrapper itemsWrapper)
+        [HttpPost]
+        [Route("DeleteDetails")]
+        public void DeleteDetails(ItemsWrapper itemsWrapper)
         {
             lock (obj)
             {
@@ -166,7 +248,7 @@ namespace AppInfoController.Controllers
             }
         }
 
-        [HttpDelete]
+        [HttpPost]
         [Route("DeleteURLOrApp")]
         public void DeleteURLOrApp(ItemWrapper itemWrapper)
         {
@@ -189,7 +271,7 @@ namespace AppInfoController.Controllers
             }
         }
 
-        [HttpDelete]
+        [HttpPost]
         [Route("DeleteLastHitDetail")]
         public void DeleteLastHitDetail(UserWrapper item)
         {
@@ -211,6 +293,44 @@ namespace AppInfoController.Controllers
                 }
             }
         }
+
+        [HttpPost]
+        [Route("ValidateUser")]
+        public string ValidateUser(Login login)
+        {
+            lock (obj)
+            {
+                List<string> _ = new();
+
+                try
+                {
+                    using (var db = new AppControllerContext())
+                    {
+                        var user = db.AppSettings.First(x => x.Name == "UserName")?.Value;
+                        var password = db.AppSettings.First(x => x.Name == "Password")?.Value;
+                        if(user!.Equals(login.UserName, StringComparison.InvariantCultureIgnoreCase)
+                            && password! == login.Password)
+                        {
+                            Guid g = Guid.NewGuid();
+                            string guidString = Convert.ToBase64String(g.ToByteArray());
+                            guidString = guidString.Replace("=", "");
+                            guidString = guidString.Replace("+", "");
+                            return guidString;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                }
+                return "";
+            }
+        }
+    }
+
+    public class Login
+    {
+        public string UserName { get; set; }
+        public string Password { get; set; }
     }
 
     public class ItemsWrapper
@@ -231,6 +351,11 @@ namespace AppInfoController.Controllers
     public class KillAppsHelper
     {
         public bool KillApp { get; set; }
+    }
+
+    public class UpdateUserValidity
+    {
+        public int Validity { get; set; }
     }
 
     public class ValidURLWithUser

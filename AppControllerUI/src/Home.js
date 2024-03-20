@@ -520,7 +520,7 @@ function Home() {
   const [updatedOn, setUpdatedOn] = useState(0)
   
   useEffect(() => {
-   axios.get('https://manvindarsingh.bsite.net/appinfo')
+   axios.get('https://www.appcontroller.in/appinfo')
    .then(res => {
     setAppInfos(res.data);
    }) 
@@ -531,9 +531,10 @@ function Home() {
     let ids = [];
     array.map(_ => ids.push(_.original.id));
     if(ids.length > 0) {
-      axios.delete('https://manvindarsingh.bsite.net/appinfo', {
-        data: { ids: ids },
-      })
+      const payload = {
+        ids: ids
+      } 
+      axios.post('https://www.appcontroller.in/appinfo/DeleteDetails', payload)
       .then(response => {
         alert(ids.length + ' row(s) deleted.')
         setUpdatedOn(new Date());

@@ -18,7 +18,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 });
 
 async function updateData(data) {
-    const apiUrl = "https://manvindarsingh.bsite.net/appinfo";
+    const apiUrl = "https://www.appcontroller.in/appinfo";
 
     const userDetails = data;
 
@@ -41,7 +41,7 @@ async function updateData(data) {
 
 async function getValidUrl() {
     const d = await fetch(
-        "https://manvindarsingh.bsite.net/appinfo/GetValidURLs"
+        "https://www.appcontroller.in/appinfo/GetValidURLs"
     );
     return await await d.json();
 }
