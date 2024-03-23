@@ -12,7 +12,7 @@ const Login = () => {
             'userName': userName,
             'password': password
         };
-          axios.post('https://www.appcontroller.in/appinfo/ValidateUser', payload)
+          axios.post('https://manvindarsingh.bsite.net/appinfo/ValidateUser', payload)
           .then(response => {
             console.log(response.data);
             if(response.data) {

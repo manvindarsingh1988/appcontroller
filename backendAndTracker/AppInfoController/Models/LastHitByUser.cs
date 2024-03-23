@@ -20,5 +20,7 @@ namespace AppInfoController.Models
 
         [NotMapped]
         public bool Inactive { get; set; }
+
+        public string? AllowedUserId { get; set; }
     }
 }

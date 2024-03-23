@@ -7,6 +7,7 @@ const UpdateDetails = (props) => {
     const [city, setCity] = useState(props.user.city);
     const [mobileNo, setMobileNo] = useState(props.user.mobileNo);
     const [address, setAddress] = useState(props.user.address);
+    const [allowedUserId, setAllowedUserId] = useState(props.user.allowedUserId);
     function handleLogin(e) {
         e.preventDefault()
         const payload = {
@@ -15,9 +16,10 @@ const UpdateDetails = (props) => {
             city: city,
             mobileNo: mobileNo,
             address: address,
-            user: props.user.user
+            user: props.user.user,
+            allowedUserId: allowedUserId
           } 
-          axios.post('https://www.appcontroller.in/appinfo/UpdateUserDetail', payload)
+          axios.post('https://manvindarsingh.bsite.net/appinfo/UpdateUserDetail', payload)
           .then(response => {
             alert('User detail added.')
             props.toggle()
@@ -60,6 +62,10 @@ const UpdateDetails = (props) => {
                         <label>
                             Address:
                             <input type="text" value={address} onChange={e => setAddress(e.target.value)} />
+                        </label>
+                        <label>
+                        Allowed User Id(s):
+                            <input type="text" value={allowedUserId} onChange={e => setAllowedUserId(e.target.value)} />
                         </label>
                         <button type="submit">Update</button>
                     </form>

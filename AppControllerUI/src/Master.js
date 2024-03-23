@@ -13,7 +13,7 @@ const Master = () => {
         user: ''
       });
     useEffect(() => {
-        axios.get('https://www.appcontroller.in/appinfo/GetApplicationSettings')
+        axios.get('https://manvindarsingh.bsite.net/appinfo/GetApplicationSettings')
         .then(res => {
             console.log(res.data);
             setChecked(res.data.killApps);
@@ -32,7 +32,7 @@ const Master = () => {
             killApp: e.target.checked,
           }
           
-          axios.post("https://www.appcontroller.in/appinfo/AddKillAppSetting", payload, {
+          axios.post("https://manvindarsingh.bsite.net/appinfo/AddKillAppSetting", payload, {
             headers: {
               'Content-Type': 'application/json'
             }
@@ -48,7 +48,7 @@ const Master = () => {
         const payload = {
             id: id
           }        
-          axios.post("https://www.appcontroller.in/appinfo/DeleteURLOrApp", payload, {
+          axios.post("https://manvindarsingh.bsite.net/appinfo/DeleteURLOrApp", payload, {
             headers: {
               'Content-Type': 'application/json'
             }
@@ -72,7 +72,7 @@ const Master = () => {
                 user: formValues.user
               }
               
-              axios.post("https://www.appcontroller.in/appinfo/AddURLOrApp", payload, {
+              axios.post("https://manvindarsingh.bsite.net/appinfo/AddURLOrApp", payload, {
                 headers: {
                   'Content-Type': 'application/json'
                 }
@@ -95,7 +95,7 @@ const Master = () => {
               validity: validity
             }
             
-            axios.post("https://www.appcontroller.in/appinfo/UpdateValidity", payload, {
+            axios.post("https://manvindarsingh.bsite.net/appinfo/UpdateValidity", payload, {
               headers: {
                 'Content-Type': 'application/json'
               }

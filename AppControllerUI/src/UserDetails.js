@@ -12,7 +12,7 @@ const UserDetails = () => {
     const csvLink = useRef();
 
     useEffect(() => {
-        axios.get('https://www.appcontroller.in/appinfo/GetLastHitByUserDetails')
+        axios.get('https://manvindarsingh.bsite.net/appinfo/GetLastHitByUserDetails')
         .then(res => {
             console.log(res.data);
             setUsers(res.data);
@@ -34,7 +34,7 @@ const UserDetails = () => {
           const payload = {
               user: userId
             }        
-            axios.post("https://www.appcontroller.in/appinfo/DeleteLastHitDetail", payload, {
+            axios.post("https://manvindarsingh.bsite.net/appinfo/DeleteLastHitDetail", payload, {
               headers: {
                 'Content-Type': 'application/json'
               }
@@ -71,6 +71,7 @@ const UserDetails = () => {
                         <th>City</th>
                         <th>Mobile No</th>
                         <th>Address</th>
+                        <th>Allowed User Id(s)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -89,6 +90,7 @@ const UserDetails = () => {
                             <td>{item.city}</td>
                             <td>{item.mobileNo}</td>
                             <td>{item.address}</td>
+                            <td>{item.allowedUserId}</td>
                             <td>
                                 <button onClick={() => togglePop(item)}>Update</button>
                                 <button style={{marginLeft: '5px'}} onClick={() => handleDelete(item.user)}>Delete</button>

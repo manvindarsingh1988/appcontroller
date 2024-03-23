@@ -520,7 +520,7 @@ function Home() {
   const [updatedOn, setUpdatedOn] = useState(0)
   
   useEffect(() => {
-   axios.get('https://www.appcontroller.in/appinfo')
+   axios.get('https://manvindarsingh.bsite.net/appinfo')
    .then(res => {
     setAppInfos(res.data);
    }) 
@@ -534,7 +534,7 @@ function Home() {
       const payload = {
         ids: ids
       } 
-      axios.post('https://www.appcontroller.in/appinfo/DeleteDetails', payload)
+      axios.post('https://manvindarsingh.bsite.net/appinfo/DeleteDetails', payload)
       .then(response => {
         alert(ids.length + ' row(s) deleted.')
         setUpdatedOn(new Date());

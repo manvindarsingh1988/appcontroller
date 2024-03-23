@@ -69,7 +69,7 @@ namespace AppInfoController.Controllers
                         context.LastHitByUsers.Add(lastHit);
                     }
                     context.SaveChanges();
-                    var appInfos = context.AllowedAppsAndUrls.ToList();
+                    var appInfos = context.AllowedAppsAndUrls.Where(_ => string.IsNullOrEmpty(_.User) || _.User == user).ToList();
                     bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
                     return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps };
                 }
@@ -110,13 +110,23 @@ namespace AppInfoController.Controllers
 
         [HttpGet]
         [Route("GetValidURLs")]
-        public IEnumerable<ValidURLWithUser> GetValidURLs()
+        public ValidData GetValidURLs(string user)
         {
             lock (obj)
             {
                 using (var context = new AppControllerContext())
                 {
-                    return context.AllowedAppsAndUrls.Where(_ => _.Type == "URL").Select(_ => new ValidURLWithUser { Url = _.Name!, User = _.User! }).ToList();
+                    var validData = new ValidData();
+                    var userDetail = context.LastHitByUsers.FirstOrDefault(x => x.User == user);
+                    if(userDetail != null)
+                    {
+                        validData.Ids = userDetail.AllowedUserId;
+                    }
+                    
+                    validData.URLs = context.AllowedAppsAndUrls
+                        .Where(_ => _.Type == "URL" && (string.IsNullOrEmpty(_.User) || _.User == user))
+                        .Select(_ => new ValidURL { Url = _.Name! }).ToList();
+                    return validData;
                 }
             }
         }
@@ -179,6 +189,7 @@ namespace AppInfoController.Controllers
                         userDetail.MobileNo = user.MobileNo;
                         userDetail.City = user.City;
                         userDetail.Address = user.Address;
+                        userDetail.AllowedUserId = user.AllowedUserId;
                         db.SaveChanges();
                     }
                 }
@@ -358,9 +369,15 @@ namespace AppInfoController.Controllers
         public int Validity { get; set; }
     }
 
-    public class ValidURLWithUser
+    public class ValidURL
     {
         public string Url { get; set; }
-        public string User { get; set; }
+    }
+
+    public class ValidData
+    {
+        public List<ValidURL> URLs { get; set; }
+
+        public string? Ids { get; set; }
     }
 }
