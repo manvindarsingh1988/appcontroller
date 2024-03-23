@@ -1,6 +1,6 @@
 // Define a global variable to store the valid URLs
 let validUrls = [];
-let clientIP = "$user$";
+let user = "$user$";
 
 chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab) {
   if (changeInfo.url) {
@@ -31,7 +31,7 @@ function validateTabURL(tabId, url) {
     Date: getDateTime(),
     AppName: url,
     Summary: "",
-    User: clientIP,
+    User: user,
   };
 
   // Close the tab if it's not valid

@@ -1,13 +1,11 @@
+const BASE_URL = "https://manvindarsingh.bsite.net";
+
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === "updateData") {
-    const urls = await getValidUrl();
+    const urls = (await getValidUrl())?.urLs;
     const data = message.data;
-    
-    const isValid = urls.some(
-      (u) =>
-      message.urlToCheck.includes(u.url)  &&
-        (u.user.trim() === "" || data.User == u.user)
-    );
+
+    const isValid = urls.some((u) => message.urlToCheck.includes(u));
     if (!isValid) {
       alert("Warning!! Restricted site...");
       await updateData(data);
@@ -18,7 +16,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 });
 
 async function updateData(data) {
-  const apiUrl = "https://manvindarsingh.bsite.net/appinfo";
+  const apiUrl = `${BASE_URL}/appinfo`;
 
   const userDetails = data;
 
@@ -39,9 +37,7 @@ async function updateData(data) {
   } catch (error) {}
 }
 
-async function getValidUrl() {
-  const d = await fetch(
-    "https://manvindarsingh.bsite.net/appinfo/GetValidURLs"
-  );
+async function getValidUrl(user) {
+  const d = await fetch(`${BASE_URL}/appinfo/GetValidURLs?user=${user}`);
   return await await d.json();
 }
