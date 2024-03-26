@@ -1,11 +1,12 @@
 const BASE_URL = "https://manvindarsingh.bsite.net";
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  var apiData = await getValidUrl(message.data.User)
+  const urls = apiData?.urLs;
   if (message.action === "updateData") {
-    const urls = (await getValidUrl())?.urLs;
     const data = message.data;
 
-    const isValid = urls.some((u) => message.urlToCheck.includes(u));
+    const isValid = urls.some((u) => message.urlToCheck.toLowerCase().includes(u.url.toLowerCase()));
     if (!isValid) {
       alert("Warning!! Restricted site...");
       await updateData(data);
@@ -13,7 +14,40 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
     chrome.runtime.sendMessage({ action: "isValidUrl", data: isValid });
   }
+  if(message.action === 'validateId') {  
+    if(apiData?.ids) {
+      let ele1 = document.getElementsByName('login'); 
+      ele1[0].disabled = true;
+      let ele = document.getElementsByName('csclogin');
+      ele[0].addEventListener('blur', () => this.getText(apiData?.ids, message.data.User), true);
+    }
+  }
 });
+
+async function getText(ids, user){
+  let inputFields = document.getElementsByName('csclogin');
+  let x = inputFields[0].value;
+  if(ids) {
+    let list = ids.split(',');
+    const isValid = list.some((u) => u.toLowerCase() === x.toLowerCase());
+    if (!isValid) {
+      let ele1 = document.getElementsByName('login'); 
+      ele1[0].disabled = true;
+      const userDetails = {
+        Id: '',
+        Date: '',
+        AppName: 'connect.csc.gov.in',
+        Summary: 'Tried to open by User Id: ' + x,
+        User: user
+      };
+      await updateData(userDetails);
+      alert("Warning!! Use aligned id only");
+      return;
+    }
+  }
+  var ele1 = document.getElementsByName('login'); 
+  ele1[0].disabled = false;
+}
 
 async function updateData(data) {
   const apiUrl = `${BASE_URL}/appinfo`;
