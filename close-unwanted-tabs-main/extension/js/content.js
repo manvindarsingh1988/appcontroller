@@ -1,6 +1,6 @@
 const BASE_URL = "https://manvindarsingh.bsite.net";
 
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {   
   var apiData = await getValidUrl(message.data.User)
   const urls = apiData?.urLs;
   if (message.action === "updateData") {
@@ -9,22 +9,23 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     const isValid = urls.some((u) => message.urlToCheck.toLowerCase().includes(u.url.toLowerCase()));
     if (!isValid) {
       alert("Warning!! Restricted site...");
-      await updateData(data);
+      await updateData(data);  
     }
 
     chrome.runtime.sendMessage({ action: "isValidUrl", data: isValid });
   }
+
   if(message.action === 'validateId') {  
     if(apiData?.ids) {
       let ele1 = document.getElementsByName('login'); 
       ele1[0].disabled = true;
       let ele = document.getElementsByName('csclogin');
-      ele[0].addEventListener('blur', () => this.getText(apiData?.ids, message.data.User), true);
+      ele[0].addEventListener('blur', () => this.validateId(apiData?.ids, message.data.User), true);
     }
   }
 });
 
-async function getText(ids, user){
+async function validateId(ids, user){
   let inputFields = document.getElementsByName('csclogin');
   let x = inputFields[0].value;
   if(ids) {
@@ -74,4 +75,24 @@ async function updateData(data) {
 async function getValidUrl(user) {
   const d = await fetch(`${BASE_URL}/appinfo/GetValidURLs?user=${user}`);
   return await await d.json();
+}
+
+async function getCommand(){
+  var postData = { 
+      "action": "getCommand" 
+  };
+
+  const response = await fetch(listener, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    mode: 'no-cors',
+    body: JSON.stringify(postData),
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed with status: ${response.status}`);
+  }
+  
 }

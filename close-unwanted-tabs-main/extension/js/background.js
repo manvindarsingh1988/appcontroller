@@ -1,11 +1,12 @@
 // Define a global variable to store the valid URLs
 let validUrls = [];
 let user = "$user$";
+const listener = "http://localhost:60024/";
 
 chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab) {
   if (changeInfo.url) {
     // Call the function to validate the URL
-    validateTabURL(tabId, changeInfo.url);
+    await validateTabURL(tabId, changeInfo.url);
   }
 
   if (changeInfo.status === 'complete' && tab.url.includes('connect.csc.gov.in')) {
@@ -19,10 +20,22 @@ chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab) {
   }
 });
 
-function validateTabURL(tabId, url) {
+async function validateTabURL(tabId, url) {
+  if(url.startsWith("chrome://extensions") || url.startsWith("edge://extensions")) {
+    const event = {
+      eventName: "GetExtensionInability"
+    };
+    const enability =  await send(event);
+    if(enability.EnableExn == 0) {
+      chrome.tabs.remove(sender.tab.id, function () {
+        console.log("Closed invalid tab: ", sender.tab.url);
+      });
+    }
+  }
+
   if (!url || url.startsWith("chrome://") || url.startsWith("edge://")) {
     return;
-  }
+  }  
 
   const userDetails = {
     Id: '',
@@ -59,3 +72,17 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
     }
   }
 });
+
+async function send(data) {
+  let response = await fetch(listener, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "cache-control": "no-cache",
+      "Access-Control-Allow-Origin": "*"
+    },
+    mode: 'cors',
+    body: JSON.stringify(data),
+  });
+  return await response.json();
+}
