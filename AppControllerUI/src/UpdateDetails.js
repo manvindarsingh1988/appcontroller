@@ -1,6 +1,7 @@
 import { useState }  from 'react';
 import axios from 'axios';
 import './UpdateDetails.css';
+import URL from './url.json';
 
 const UpdateDetails = (props) => {
     const [name, setName] = useState(props.user.name);
@@ -19,7 +20,7 @@ const UpdateDetails = (props) => {
             user: props.user.user,
             allowedUserId: allowedUserId
           } 
-          axios.post('https://manvindarsingh.bsite.net/appinfo/UpdateUserDetail', payload)
+          axios.post(URL.url + 'appinfo/UpdateUserDetail', payload)
           .then(response => {
             alert('User detail added.')
             props.toggle()

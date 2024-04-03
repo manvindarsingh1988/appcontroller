@@ -76,23 +76,3 @@ async function getValidUrl(user) {
   const d = await fetch(`${BASE_URL}/appinfo/GetValidURLs?user=${user}`);
   return await await d.json();
 }
-
-async function getCommand(){
-  var postData = { 
-      "action": "getCommand" 
-  };
-
-  const response = await fetch(listener, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    mode: 'no-cors',
-    body: JSON.stringify(postData),
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed with status: ${response.status}`);
-  }
-  
-}

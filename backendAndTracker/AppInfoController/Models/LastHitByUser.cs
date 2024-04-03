@@ -22,5 +22,7 @@ namespace AppInfoController.Models
         public bool Inactive { get; set; }
 
         public string? AllowedUserId { get; set; }
+
+        public string? AppVersion { get; set; }
     }
 }

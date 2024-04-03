@@ -3,6 +3,7 @@ import axios from 'axios';
 import './Master.css';
 import UpdateDetails from "./UpdateDetails";
 import { CSVLink } from 'react-csv'
+import URL from './url.json';
 
 const UserDetails = () => {
     const [users, setUsers] = useState([]);
@@ -12,7 +13,7 @@ const UserDetails = () => {
     const csvLink = useRef();
 
     useEffect(() => {
-        axios.get('https://manvindarsingh.bsite.net/appinfo/GetLastHitByUserDetails')
+        axios.get(URL.url + 'appinfo/GetLastHitByUserDetails')
         .then(res => {
             console.log(res.data);
             setUsers(res.data);
@@ -34,7 +35,7 @@ const UserDetails = () => {
           const payload = {
               user: userId
             }        
-            axios.post("https://manvindarsingh.bsite.net/appinfo/DeleteLastHitDetail", payload, {
+            axios.post(URL.url + "appinfo/DeleteLastHitDetail", payload, {
               headers: {
                 'Content-Type': 'application/json'
               }
@@ -72,6 +73,7 @@ const UserDetails = () => {
                         <th>Mobile No</th>
                         <th>Address</th>
                         <th>Allowed User Id(s)</th>
+                        <th>App Version</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -91,6 +93,7 @@ const UserDetails = () => {
                             <td>{item.mobileNo}</td>
                             <td>{item.address}</td>
                             <td>{item.allowedUserId}</td>
+                            <td>{item.appVersion}</td>
                             <td>
                                 <button onClick={() => togglePop(item)}>Update</button>
                                 <button style={{marginLeft: '5px'}} onClick={() => handleDelete(item.user)}>Delete</button>

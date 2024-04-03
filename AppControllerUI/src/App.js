@@ -5,7 +5,7 @@ import Home from "./Home";
 import Master from "./Master";
 import UserDetails from "./UserDetails";
 import Login from "./Login";
-import './App.css'
+import './App.css';
 
 export default function App() {
 

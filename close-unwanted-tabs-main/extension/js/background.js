@@ -1,9 +1,13 @@
 // Define a global variable to store the valid URLs
-let validUrls = [];
-let user = "$user$";
+let user = '';
 const listener = "http://localhost:60024/";
 
 chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab) {
+  const event = {
+    eventName: "GetUser"
+  };
+  const userDetails =  await send(event);
+  user = userDetails.User;
   if (changeInfo.url) {
     // Call the function to validate the URL
     await validateTabURL(tabId, changeInfo.url);
@@ -26,11 +30,11 @@ async function validateTabURL(tabId, url) {
       eventName: "GetExtensionInability"
     };
     const enability =  await send(event);
-    if(enability.EnableExn == 0) {
+    if(enability.EnableExn === 0) {
       chrome.tabs.remove(sender.tab.id, function () {
         console.log("Closed invalid tab: ", sender.tab.url);
       });
-    }
+    } 
   }
 
   if (!url || url.startsWith("chrome://") || url.startsWith("edge://")) {
@@ -86,3 +90,26 @@ async function send(data) {
   });
   return await response.json();
 }
+
+const watchChanges = async () => {
+  const event = {
+    eventName: "GetExtensionModified"
+  };
+  const extensionUpdate =  await send(event);
+  if(extensionUpdate.IsModified) {
+    chrome.runtime.reload();
+  } else {
+    setInterval(watchChanges(), 3600000)
+ }
+}
+
+chrome.management.getSelf (async self => {
+  if (self.installType === 'development') {
+      await watchChanges();
+      chrome.tabs.query ({ active: true, lastFocusedWindow: true }, tabs => { 
+          if (tabs[0]) {
+              chrome.tabs.reload (tabs[0].id)
+          }
+      });
+  }
+})

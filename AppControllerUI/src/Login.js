@@ -1,6 +1,7 @@
 import { useState }  from 'react';
 import axios from 'axios';
 import './UpdateDetails.css';
+import URL from './url.json';
 
 const Login = () => {
     const [userName, setUserName] = useState('');
@@ -12,7 +13,7 @@ const Login = () => {
             'userName': userName,
             'password': password
         };
-          axios.post('https://manvindarsingh.bsite.net/appinfo/ValidateUser', payload)
+          axios.post(URL.url + 'appinfo/ValidateUser', payload)
           .then(response => {
             console.log(response.data);
             if(response.data) {

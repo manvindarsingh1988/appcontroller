@@ -87,6 +87,9 @@ namespace AppInfoController.Migrations
                     b.Property<string>("AllowedUserId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("AppVersion")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("City")
                         .HasColumnType("TEXT");
 

@@ -7,5 +7,7 @@ namespace AppInfoController
         public List<AllowedAppsAndUrl> AllowedAppsAndUrls { get; set; }
         public bool KillApps { get; set; }
         public int UserValidity { get; internal set; }
+        public string AppVersion { get; set; }
+        public string InstalledAppVersion { get; set; }
     }
 }

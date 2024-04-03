@@ -10,6 +10,7 @@ import {
 } from "react-table";
 // A great library for fuzzy filtering/sorting items
 import {matchSorter}from "match-sorter";
+import URL from './url.json';
 
 const Styles = styled.div`
   padding: 1rem;
@@ -520,7 +521,7 @@ function Home() {
   const [updatedOn, setUpdatedOn] = useState(0)
   
   useEffect(() => {
-   axios.get('https://manvindarsingh.bsite.net/appinfo')
+   axios.get(URL.url + 'appinfo')
    .then(res => {
     setAppInfos(res.data);
    }) 
@@ -534,7 +535,7 @@ function Home() {
       const payload = {
         ids: ids
       } 
-      axios.post('https://manvindarsingh.bsite.net/appinfo/DeleteDetails', payload)
+      axios.post(URL.url + 'appinfo/DeleteDetails', payload)
       .then(response => {
         alert(ids.length + ' row(s) deleted.')
         setUpdatedOn(new Date());

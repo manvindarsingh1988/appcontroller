@@ -7,6 +7,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,9 +28,18 @@ namespace AppController
         private static DateTime _updatedOn = DateTime.Now;
         private static string _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
         private static List<AppInfo> _failed = new List<AppInfo>();
+        private static HttpListener _listener;
+        private static object _lock = new object();
 
         static void Main()
         {
+            _listener = new HttpListener();
+            _listener.Prefixes.Add("http://localhost:60024/");
+            _listener.Start();
+            var result = _listener.BeginGetContext(new AsyncCallback(Program.ProcessRequest), null);
+            
+            //result.AsyncWaitHandle.WaitOne();
+
             var user = GetUser();
             var appHelper = GetAppData(user).Result;
 
@@ -45,6 +56,12 @@ namespace AppController
                     NotifyAndKillOpenedProcesses(appHelper, user);
 
                     //NotifyOpenedBrowserTabs(user);
+                    if (appHelper.AppVersion != appHelper.InstalledAppVersion)
+                    {
+                        var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
+                        var parentPath = Directory.GetParent(path).FullName;
+                        Process.Start(new ProcessStartInfo(parentPath + "\\AppDownloader.exe"));
+                    }
 
                     Thread.Sleep(5000);
                 }
@@ -53,6 +70,82 @@ namespace AppController
             {
                 WriteException(ex);
             }
+        }    
+
+        static void ProcessRequest(IAsyncResult result)
+        {
+            HttpListenerContext context = _listener.EndGetContext(result);
+            HttpListenerRequest request = context.Request;
+            HttpListenerResponse response = context.Response;
+
+            response.Headers.Add("Access-Control-Allow-Headers", "*");
+            response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            response.Headers.Add("Access-Control-Max-Age", "1728000");
+            response.Headers.Add("Access-Control-Allow-Origin", "*");
+
+            string postData;
+            EventDetail eventDetail = new EventDetail();
+            using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
+            {
+                postData = reader.ReadToEnd();
+                eventDetail = JsonConvert.DeserializeObject<EventDetail>(postData);
+                //use your favourite json parser here
+            }
+            
+            var app = GetData(eventDetail);
+            byte[] buffer = Encoding.UTF8.GetBytes(app);
+            
+            response.ContentLength64 = buffer.Length;
+            response.StatusCode = (int)HttpStatusCode.OK;
+            response.StatusDescription = "OK";
+            response.ProtocolVersion = new Version("1.1");
+            Stream output = response.OutputStream;
+
+            output.Write(buffer, 0, buffer.Length);
+
+            output.Close();
+            response.Close();
+            _listener.BeginGetContext(new AsyncCallback(ProcessRequest), null);
+        }
+
+        private static string GetData(EventDetail eventDetail)
+        {
+            lock(_lock)
+            {
+                if (eventDetail.EventName == "GetExtensionInability")
+                {
+                    return File.ReadAllText("App.json");
+                }
+
+                if (eventDetail.EventName == "GetExtensionModified")
+                {
+                    var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
+                    var res = new ExtensionUpdate() { IsModified = false };
+                    var directory = new DirectoryInfo(path + "\\Extension\\js");
+                    var modifiedDate = directory.GetFiles().Max(file => file.LastWriteTime);
+                    var data = File.ReadAllText("App.json");
+
+                    var appSettings = JsonConvert.DeserializeObject<AppSettings>(data);
+                    if(appSettings.LastModified == null)
+                    {
+                        appSettings.LastModified = modifiedDate;
+                        File.WriteAllText("App.json", JsonConvert.SerializeObject(appSettings));
+                    }
+                    else if(appSettings.LastModified < modifiedDate)
+                    {
+                        appSettings.LastModified = modifiedDate;
+                        File.WriteAllText("App.json", JsonConvert.SerializeObject(appSettings));
+                        res.IsModified = true;
+                    }
+                    return JsonConvert.SerializeObject(res);
+                }
+
+                if (eventDetail.EventName == "GetUser")
+                {
+                    return JsonConvert.SerializeObject(new UserDetail { User = _userInner });
+                }
+            }
+            return string.Empty;
         }
 
         private static void WriteException(Exception ex)
@@ -220,6 +313,7 @@ namespace AppController
 
         private static string GetUser()
         {
+            _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
             return _userInner;
         }
 
@@ -282,11 +376,6 @@ namespace AppController
         {
             try
             {
-                if((DateTime.Now - _updatedOn).TotalSeconds < 15)
-                {
-                    throw new Exception();
-                }
-                
                 var handler = new HttpClientHandler
                 {
                     ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
@@ -361,6 +450,9 @@ namespace AppController
     {
         public List<AllowedAppsAndUrl> AllowedAppsAndUrls { get; set; }
         public bool KillApps { get; set; }
+        public int UserValidity { get; internal set; }
+        public string AppVersion { get; set; }
+        public string InstalledAppVersion { get; set; }
     }
 
     public partial class AllowedAppsAndUrl
@@ -385,5 +477,26 @@ namespace AppController
         public string AppName { get; set; }
 
         public string Summary { get; set; }
+    }
+
+    public class EventDetail
+    {
+        public string EventName { get; set; }
+    }
+
+    public class AppSettings
+    {
+        public int EnableExn { get; set; }
+        public DateTime? LastModified { get; set;}
+    }
+
+    public class ExtensionUpdate
+    {
+        public bool IsModified { get; set; }
+    }
+
+    public class UserDetail
+    {
+        public string User { get; set; }
     }
 }

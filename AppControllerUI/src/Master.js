@@ -1,24 +1,27 @@
 import { useState, useEffect }  from 'react';
 import axios from 'axios';
 import './Master.css';
+import URL from './url.json';
 
 const Master = () => {
     const [updatedOn, setUpdatedOn] = useState(0)
     const [checked, setChecked] = useState(false);
     const [validity, setValidity] = useState(0);
     const [apps, setApps] = useState([]);
+    const [appVersion, setAppVersion] = useState('');
     const [formValues, setFormValues] = useState({
         name: '',
         type: 'URL',
         user: ''
       });
     useEffect(() => {
-        axios.get('https://manvindarsingh.bsite.net/appinfo/GetApplicationSettings')
+        axios.get(URL.url + 'appinfo/GetApplicationSettings')
         .then(res => {
             console.log(res.data);
             setChecked(res.data.killApps);
             setApps(res.data.allowedAppsAndUrls);
             setValidity(res.data.userValidity);
+            setAppVersion(res.data.appVersion);
         }) 
         .catch(err => console.log(err));
        }, [updatedOn]);
@@ -32,7 +35,7 @@ const Master = () => {
             killApp: e.target.checked,
           }
           
-          axios.post("https://manvindarsingh.bsite.net/appinfo/AddKillAppSetting", payload, {
+          axios.post(URL.url + "appinfo/AddKillAppSetting", payload, {
             headers: {
               'Content-Type': 'application/json'
             }
@@ -48,7 +51,7 @@ const Master = () => {
         const payload = {
             id: id
           }        
-          axios.post("https://manvindarsingh.bsite.net/appinfo/DeleteURLOrApp", payload, {
+          axios.post(URL.url + "appinfo/DeleteURLOrApp", payload, {
             headers: {
               'Content-Type': 'application/json'
             }
@@ -72,7 +75,7 @@ const Master = () => {
                 user: formValues.user
               }
               
-              axios.post("https://manvindarsingh.bsite.net/appinfo/AddURLOrApp", payload, {
+              axios.post(URL.url + "appinfo/AddURLOrApp", payload, {
                 headers: {
                   'Content-Type': 'application/json'
                 }
@@ -95,7 +98,7 @@ const Master = () => {
               validity: validity
             }
             
-            axios.post("https://manvindarsingh.bsite.net/appinfo/UpdateValidity", payload, {
+            axios.post(URL.url + "appinfo/UpdateValidity", payload, {
               headers: {
                 'Content-Type': 'application/json'
               }
@@ -136,6 +139,12 @@ const Master = () => {
                     />
                 </label>
                 <button style={{marginTop: "5px", marginBottom: "5px", marginLeft: "10px"}} onClick={updateValidity}>Update</button>
+        </div>
+        <div style={st}>
+          <label style={{marginLeft: "10px"}}>
+          Latest Application Version:
+                    <b> {appVersion}</b>
+                </label>
         </div>
         <p><b>Allowed Apps:</b></p>
         <div style={st}>

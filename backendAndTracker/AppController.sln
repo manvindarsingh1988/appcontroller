@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppController", "AppControl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskScheduler", "TaskScheduler\TaskScheduler.csproj", "{A87B10C2-F454-48E6-BD6E-1FD61D65363C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppDownloader", "AppDownloader\AppDownloader.csproj", "{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,14 @@ Global
 		{A87B10C2-F454-48E6-BD6E-1FD61D65363C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A87B10C2-F454-48E6-BD6E-1FD61D65363C}.Release|x86.ActiveCfg = Release|Any CPU
 		{A87B10C2-F454-48E6-BD6E-1FD61D65363C}.Release|x86.Build.0 = Release|Any CPU
+		{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}.Debug|x86.Build.0 = Debug|Any CPU
+		{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}.Release|x86.ActiveCfg = Release|Any CPU
+		{CD31D0D1-9099-4B26-858C-80C9FCAC6D9A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

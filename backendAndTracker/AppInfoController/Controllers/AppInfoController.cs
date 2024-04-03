@@ -2,6 +2,7 @@ using AppInfoController.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.IO.Compression;
 using System.Text;
 
 namespace AppInfoController.Controllers
@@ -37,7 +38,8 @@ namespace AppInfoController.Controllers
                     var appInfos = context.AllowedAppsAndUrls.ToList();
                     bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
                     var userValidity = int.Parse(context.AppSettings.First(x => x.Name == "UserValidity")?.Value ?? "10");
-                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, UserValidity =  userValidity};
+                    var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
+                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, UserValidity =  userValidity, AppVersion = appVersion };
                 }
             }
         }
@@ -71,7 +73,9 @@ namespace AppInfoController.Controllers
                     context.SaveChanges();
                     var appInfos = context.AllowedAppsAndUrls.Where(_ => string.IsNullOrEmpty(_.User) || _.User == user).ToList();
                     bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
-                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps };
+                    var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
+                    
+                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, AppVersion = appVersion, InstalledAppVersion = userDetail?.AppVersion! };
                 }
             }
         }
@@ -175,6 +179,20 @@ namespace AppInfoController.Controllers
         }
 
         [HttpPost]
+        [Route("UpdateLatestAppVersion")]
+        public void UpdateLatestAppVersion(LatestAppVersion latestAppVersion)
+        {
+            lock (obj)
+            {
+                using (var db = new AppControllerContext())
+                {
+                    db.AppSettings.First(x => x.Name == "AppVersion").Value = latestAppVersion.AppVersion;
+                    db.SaveChanges();
+                }
+            }
+        }
+
+        [HttpPost]
         [Route("UpdateUserDetail")]
         public void UpdateUserDetail(LastHitByUser user)
         {
@@ -192,6 +210,39 @@ namespace AppInfoController.Controllers
                         userDetail.AllowedUserId = user.AllowedUserId;
                         db.SaveChanges();
                     }
+                }
+            }
+        }
+
+        [HttpPost]
+        [Route("UpdateAppVersion")]
+        public void UpdateAppVersion(LastHitByUser user)
+        {
+            lock (obj)
+            {
+                using (var db = new AppControllerContext())
+                {
+                    var userDetail = db.LastHitByUsers.FirstOrDefault(x => x.User == user.User);
+                    DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
+                    TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
+                    DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
+                    var time = iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
+                    if (userDetail != null)
+                    {
+                        userDetail.Date = time;
+                        userDetail.AppVersion = user.AppVersion;
+                    }
+                    else
+                    {
+                        var lastHit = new LastHitByUser
+                        {
+                            User = user.User,
+                            Date = time,
+                            AppVersion = user.AppVersion
+                        };
+                        db.LastHitByUsers.Add(lastHit);
+                    }
+                    db.SaveChanges();
                 }
             }
         }
@@ -229,6 +280,11 @@ namespace AppInfoController.Controllers
                         }
                     }
                     appInfo.Id = Guid.NewGuid().ToString();
+                    DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
+                    TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
+                    DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
+                    var time = iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
+                    appInfo.Date = time;
                     db.AppInfos.Add(appInfo);
                     db.SaveChanges();
                 }
@@ -336,6 +392,18 @@ namespace AppInfoController.Controllers
                 return "";
             }
         }
+
+        [HttpGet]
+        [Route("GetZip")]
+        public byte[] GetZip()
+        {
+            byte[] result;
+            using (MemoryStream tmpMemory = new MemoryStream(System.IO.File.ReadAllBytes("AppZip//AppController.zip")))
+            {
+                result = tmpMemory.ToArray();
+            };
+            return result;
+        }
     }
 
     public class Login
@@ -367,6 +435,11 @@ namespace AppInfoController.Controllers
     public class UpdateUserValidity
     {
         public int Validity { get; set; }
+    }
+
+    public class LatestAppVersion
+    {
+        public string AppVersion { get; set; }
     }
 
     public class ValidURL

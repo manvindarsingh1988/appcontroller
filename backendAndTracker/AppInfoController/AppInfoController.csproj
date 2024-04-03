@@ -20,6 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="AppZip\AppController.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Database\AppController.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -27,6 +30,7 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+    <Folder Include="AppZip\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
