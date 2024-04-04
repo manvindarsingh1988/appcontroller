@@ -110,40 +110,47 @@ namespace AppController
 
         private static string GetData(EventDetail eventDetail)
         {
-            lock(_lock)
+            try
             {
-                if (eventDetail.EventName == "GetExtensionInability")
-                {
-                    return File.ReadAllText("App.json");
-                }
-
-                if (eventDetail.EventName == "GetExtensionModified")
+                lock (_lock)
                 {
                     var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
-                    var res = new ExtensionUpdate() { IsModified = false };
-                    var directory = new DirectoryInfo(path + "\\Extension\\js");
-                    var modifiedDate = directory.GetFiles().Max(file => file.LastWriteTime);
-                    var data = File.ReadAllText("App.json");
-
-                    var appSettings = JsonConvert.DeserializeObject<AppSettings>(data);
-                    if(appSettings.LastModified == null)
+                    if (eventDetail.EventName == "GetExtensionInability")
                     {
-                        appSettings.LastModified = modifiedDate;
-                        File.WriteAllText("App.json", JsonConvert.SerializeObject(appSettings));
+                        return File.ReadAllText(path + "\\App.json");
                     }
-                    else if(appSettings.LastModified < modifiedDate)
-                    {
-                        appSettings.LastModified = modifiedDate;
-                        File.WriteAllText("App.json", JsonConvert.SerializeObject(appSettings));
-                        res.IsModified = true;
-                    }
-                    return JsonConvert.SerializeObject(res);
-                }
 
-                if (eventDetail.EventName == "GetUser")
-                {
-                    return JsonConvert.SerializeObject(new UserDetail { User = _userInner });
+                    if (eventDetail.EventName == "GetExtensionModified")
+                    {
+                        var res = new ExtensionUpdate() { IsModified = false };
+                        var directory = new DirectoryInfo(path + "\\Extension\\js");
+                        var modifiedDate = directory.GetFiles().Max(file => file.LastWriteTime);
+                        var data = File.ReadAllText(path + "\\App.json");
+
+                        var appSettings = JsonConvert.DeserializeObject<AppSettings>(data);
+                        if (appSettings.LastModified == null)
+                        {
+                            appSettings.LastModified = modifiedDate;
+                            File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+                        }
+                        else if (appSettings.LastModified < modifiedDate)
+                        {
+                            appSettings.LastModified = modifiedDate;
+                            File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+                            res.IsModified = true;
+                        }
+                        return JsonConvert.SerializeObject(res);
+                    }
+
+                    if (eventDetail.EventName == "GetUser")
+                    {
+                        return JsonConvert.SerializeObject(new UserDetail { User = _userInner });
+                    }
                 }
+            }
+            catch (Exception ex) 
+            {
+                WriteException(ex);
             }
             return string.Empty;
         }
@@ -434,6 +441,7 @@ namespace AppController
                     {
                         helper = await response.Content.ReadAsAsync<Helper>();
                         helper.AllowedAppsAndUrls.Add(new AllowedAppsAndUrl { Name = "AppController", Type = "App" });
+                        helper.AllowedAppsAndUrls.Add(new AllowedAppsAndUrl { Name = "AppDownloader", Type = "App" });
                         processing = false;
                     }
                 }

@@ -64,7 +64,7 @@ namespace TaskScheduler
                 var keys = obj.GetValueNames();
                 if (!keys.Contains(key))
                 {
-                    obj.SetValue("xyz", 1);
+                    obj.SetValue(key, 1);
                 }
             }
         }

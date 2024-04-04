@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -8,7 +7,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -28,7 +26,7 @@ namespace AppDownloader
                 var processes = Process.GetProcessesByName("AppController");
                 if (appHelper.AppVersion != appHelper.InstalledAppVersion)
                 {
-                    await GetZip(appHelper.AppVersion);
+                    await GetZip(parent, appHelper.AppVersion);
                     if (processes != null && processes.Any())
                     {
                         foreach (var proc in processes)
@@ -46,13 +44,12 @@ namespace AppDownloader
 
                     File.Delete(parent + $"\\{appHelper.AppVersion}.zip");
                 }
-
+                await PostData(new UserDetail { AppVersion = appHelper.AppVersion, User = user });
                 if (processes == null || !processes.Any())
                 {
                     var path = Path.Combine(parent + "\\AppController", "AppController.exe");
                     Process.Start(new ProcessStartInfo(path));
                 }
-                await PostData(new UserDetail { AppVersion = appHelper.AppVersion, User = user });
             });
             t.Wait();
         }
@@ -81,7 +78,7 @@ namespace AppDownloader
             }
             catch (Exception ex)
             {
-                
+                WriteException(ex);
             }
         }
 
@@ -122,13 +119,13 @@ namespace AppDownloader
                 }
                 catch (Exception ex)
                 {
-                    
+                    WriteException(ex);
                 }
             }
             return helper;
         }
 
-        private async static Task GetZip(string appVersion)
+        private async static Task GetZip(string path, string appVersion)
         {
             try
             {
@@ -151,7 +148,7 @@ namespace AppDownloader
                 if (response.IsSuccessStatusCode)
                 {
                     var rs = await response.Content.ReadAsAsync<byte[]>();
-                    using (var writer = new BinaryWriter(File.OpenWrite(appVersion + ".zip")))
+                    using (var writer = new BinaryWriter(File.OpenWrite(path + "\\" + appVersion + ".zip")))
                     {
                         writer.Write(rs);
                     }
@@ -159,7 +156,18 @@ namespace AppDownloader
             }
             catch (Exception ex)
             {
+                WriteException(ex);
             }
+        }
+
+        private static void WriteException(Exception ex)
+        {
+            var st = string.Empty;
+            if (File.Exists("Appdownloader.txt"))
+            {
+                st = File.ReadAllText("Appdownloader.txt");
+            }
+            File.WriteAllText("Appdownloader.txt", st + Environment.NewLine + ex.Message);
         }
     }
     public class Helper

@@ -93,15 +93,20 @@ async function send(data) {
 }
 
 const watchChanges = async () => {
-  const event = {
-    eventName: "GetExtensionModified"
-  };
-  const extensionUpdate =  await send(event);
-  if(extensionUpdate.IsModified) {
-    chrome.runtime.reload();
-  } else {
-    setInterval(watchChanges(), 3600000)
- }
+    try {
+        const event = {
+            eventName: "GetExtensionModified"
+        };
+        const extensionUpdate = await send(event);
+        if (extensionUpdate.IsModified) {
+            chrome.runtime.reload();
+        } else {
+            setInterval(watchChanges, 3600000)
+        }
+    }
+    catch (err) {
+        setInterval(watchChanges, 60000)
+    }
 }
 
 chrome.management.getSelf (async self => {
