@@ -32,7 +32,7 @@ async function validateTabURL(tabId, url) {
     };
     const enability =  await send(event);
     if(enability.EnableExn === 0) {
-      chrome.tabs.remove(sender.tab.id, function () {
+        chrome.tabs.remove(tabId, function () {
         console.log("Closed invalid tab: ", sender.tab.url);
       });
     } 
