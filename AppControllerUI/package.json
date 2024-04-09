@@ -24,7 +24,7 @@
     "scripts": {
         "start": "react-scripts start",
         "serve": "webpack serve --mode development",
-        "build": "webpack --mode production"
+        "build": "webpack --mode production && del .\\dist\\bundle.js.LICENSE.txt && copy /Y .\\dist\\* ..\\backendAndTracker\\AppInfoController\\wwwroot\\"
     },
     "eslintConfig": {
         "extends": [
