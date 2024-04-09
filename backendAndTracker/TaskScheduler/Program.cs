@@ -6,6 +6,7 @@ using System.Linq;
 using System.IO;
 using System.Net;
 using System.Diagnostics;
+using Microsoft.Win32;
 
 namespace TaskScheduler
 {
@@ -13,6 +14,10 @@ namespace TaskScheduler
     {
         static void Main(string[] args)
         {
+            var chromeKeys = new string[4] { "SOFTWARE", "Policies", "Google", "Chrome" };
+            var edgeKeys = new string[4] { "SOFTWARE", "Policies", "Microsoft", "Edge" };
+            AddKey(chromeKeys, "IncognitoModeAvailability");
+
             using (TaskService ts = new TaskService())
             {
                 var task = ts.AllTasks.FirstOrDefault(_ => _.Name == "AppControllerTask");
@@ -50,15 +55,16 @@ namespace TaskScheduler
                 ts.RootFolder.RegisterTaskDefinition(@"AppControllerTask", td);
                 var t = ts.AllTasks.FirstOrDefault(_ => _.Name == "AppControllerTask");
                 var j = t.Run();
-
-                AddKey("SOFTWARE\\Policies\\Google\\Chrome", "IncognitoModeAvailability");
-                AddKey("SOFTWARE\\Policies\\Microsoft\\Edge", "InPrivateModeAvailability");
             }
+            AddKey("SOFTWARE\\Policies\\Google\\Chrome", "IncognitoModeAvailability");
+            AddKey("SOFTWARE\\Policies\\Microsoft\\Edge", "InPrivateModeAvailability");
+            AddKey(chromeKeys, "IncognitoModeAvailability");
+            AddKey(edgeKeys, "InPrivateModeAvailability");
         }
 
         private static void AddKey(string path, string key)
         {
-            var obj = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(path, true);
+            var obj = Registry.LocalMachine.OpenSubKey(path, true);
             if(obj != null)
             {
                 var keys = obj.GetValueNames();
@@ -66,6 +72,31 @@ namespace TaskScheduler
                 {
                     obj.SetValue(key, 1);
                 }
+            }
+        }
+
+        private static void AddKey(string[] keys, string keyName)
+        {
+            RegistryKey keyInner;
+            RegistryKey oldKeyInner = null;
+            var st = string.Empty;
+            foreach(var key in keys)
+            {
+                st = string.IsNullOrEmpty(st) ? key : st + "\\" + key;
+                keyInner = Registry.LocalMachine.OpenSubKey(st, true);
+                if (keyInner != null)
+                {
+                    oldKeyInner = keyInner;
+                }
+                else
+                {
+                    oldKeyInner = oldKeyInner.CreateSubKey(key, true);
+                }
+            }
+            var allKeys = oldKeyInner.GetValueNames();
+            if (!allKeys.Contains(keyName))
+            {
+                oldKeyInner.SetValue(keyName, 1);
             }
         }
     }

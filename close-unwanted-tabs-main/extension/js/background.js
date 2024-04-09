@@ -1,4 +1,5 @@
 // Define a global variable to store the valid URLs
+
 let user = '';
 const listener = "http://localhost:60024/";
 
@@ -31,7 +32,7 @@ async function validateTabURL(tabId, url) {
     };
     const enability =  await send(event);
     if(enability.EnableExn === 0) {
-      chrome.tabs.remove(tabId, function () {
+        chrome.tabs.remove(tabId, function () {
         console.log("Closed invalid tab: ", sender.tab.url);
       });
     } 
@@ -92,20 +93,20 @@ async function send(data) {
 }
 
 const watchChanges = async () => {
-  try {
-    const event = {
-        eventName: "GetExtensionModified"
-    };
-    const extensionUpdate = await send(event);
-    if (extensionUpdate.IsModified) {
-        chrome.runtime.reload();
-    } else {
-        setInterval(watchChanges, 3600000)
+    try {
+        const event = {
+            eventName: "GetExtensionModified"
+        };
+        const extensionUpdate = await send(event);
+        if (extensionUpdate.IsModified) {
+            chrome.runtime.reload();
+        } else {
+            setInterval(watchChanges, 3600000)
+        }
     }
-}
-catch (err) {
-    setInterval(watchChanges, 60000)
-}
+    catch (err) {
+        setInterval(watchChanges, 60000)
+    }
 }
 
 chrome.management.getSelf (async self => {

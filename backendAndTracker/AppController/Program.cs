@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Win32;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -33,11 +34,18 @@ namespace AppController
 
         static void Main()
         {
+            var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
+            var parentPath = Directory.GetParent(path).FullName;
+
+            RecreateAppSettingFile(path, parentPath);
+
+            DisablePrivateMode(path);
+
             _listener = new HttpListener();
             _listener.Prefixes.Add("http://localhost:60024/");
             _listener.Start();
             var result = _listener.BeginGetContext(new AsyncCallback(Program.ProcessRequest), null);
-            
+
             //result.AsyncWaitHandle.WaitOne();
 
             var user = GetUser();
@@ -58,8 +66,7 @@ namespace AppController
                     //NotifyOpenedBrowserTabs(user);
                     if (appHelper.AppVersion != appHelper.InstalledAppVersion)
                     {
-                        var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
-                        var parentPath = Directory.GetParent(path).FullName;
+                        File.Copy(path + "\\App.json", parentPath + "\\App.json");
                         Process.Start(new ProcessStartInfo(parentPath + "\\AppDownloader.exe"));
                     }
 
@@ -70,7 +77,66 @@ namespace AppController
             {
                 WriteException(ex);
             }
-        }    
+        }
+
+        private static void RecreateAppSettingFile(string path, string parentPath)
+        {
+            if (File.Exists(parentPath + "\\App.json"))
+            {
+                var data = File.ReadAllText(path + "\\App.json");
+                var appSettings = JsonConvert.DeserializeObject<AppSettings>(data);
+
+                var data1 = File.ReadAllText(parentPath + "\\App.json");
+                var appSettings1 = JsonConvert.DeserializeObject<AppSettings>(data1);
+
+                appSettings.EnableExn = appSettings1.EnableExn;
+                appSettings.PrivateModeDisable = appSettings1.PrivateModeDisable;
+                appSettings.LastModified = appSettings1.LastModified;
+                File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+                File.Delete(parentPath + "\\App.json");
+            }
+        }
+
+        private static void DisablePrivateMode(string path)
+        {
+            var data = File.ReadAllText(path + "\\App.json");
+
+            var appSettings = JsonConvert.DeserializeObject<AppSettings>(data);
+            if (!appSettings.PrivateModeDisable)
+            {
+                var chromeKeys = new string[4] { "SOFTWARE", "Policies", "Google", "Chrome" };
+                var edgeKeys = new string[4] { "SOFTWARE", "Policies", "Microsoft", "Edge" };
+                AddKey(chromeKeys, "IncognitoModeAvailability");
+                AddKey(edgeKeys, "InPrivateModeAvailability");
+                appSettings.PrivateModeDisable = true;
+                File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+            }
+        }
+
+        private static void AddKey(string[] keys, string keyName)
+        {
+            RegistryKey keyInner;
+            RegistryKey oldKeyInner = null;
+            var st = string.Empty;
+            foreach (var key in keys)
+            {
+                st = string.IsNullOrEmpty(st) ? key : st + "\\" + key;
+                keyInner = Registry.LocalMachine.OpenSubKey(st, true);
+                if (keyInner != null)
+                {
+                    oldKeyInner = keyInner;
+                }
+                else
+                {
+                    oldKeyInner = oldKeyInner.CreateSubKey(key, true);
+                }
+            }
+            var allKeys = oldKeyInner.GetValueNames();
+            if (!allKeys.Contains(keyName))
+            {
+                oldKeyInner.SetValue(keyName, 1);
+            }
+        }
 
         static void ProcessRequest(IAsyncResult result)
         {
@@ -496,6 +562,8 @@ namespace AppController
     {
         public int EnableExn { get; set; }
         public DateTime? LastModified { get; set;}
+
+        public bool PrivateModeDisable { get; set; }
     }
 
     public class ExtensionUpdate
