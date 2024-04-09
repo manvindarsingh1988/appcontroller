@@ -32,3 +32,20 @@
   .active {
     background-color: #04AA6D;
   }
+
+  #table-wrapper {
+    position: relative;
+  }
+  
+  #table-scroll {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+  
+  #table-wrapper table {
+    width: 100%;
+  }
+  
+  #table-wrapper table thead th .text {
+    position: absolute;
+  }
