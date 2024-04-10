@@ -783,3 +783,4 @@
 /backendAndTracker/TaskScheduler/bin/Release/AppController/extension/js/*.js
 /backendAndTracker/TaskScheduler/bin/Release/AppController/extension/js/*.json
 /backendAndTracker/TaskScheduler/bin/Release/AppController/extension/*.json
+AppControllerUI/package-lock.json

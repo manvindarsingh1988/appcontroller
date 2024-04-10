@@ -1,7 +1,7 @@
 import { useState }  from 'react';
 import axios from 'axios';
-import './UpdateDetails.css';
-import URL from './url.json';
+import '../css/UpdateDetails.css';
+import URL from '../data/url.json';
 
 const Login = () => {
     const [userName, setUserName] = useState('');

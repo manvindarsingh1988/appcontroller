@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef }  from 'react';
 import axios from 'axios';
-import './Master.css';
+import '../css/Master.css';
 import UpdateDetails from "./UpdateDetails";
 import { CSVLink } from 'react-csv'
-import URL from './url.json';
+import URL from '../data/url.json';
 
 const UserDetails = () => {
     const [users, setUsers] = useState([]);
