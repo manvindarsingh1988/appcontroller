@@ -784,3 +784,6 @@
 /backendAndTracker/TaskScheduler/bin/Release/AppController/extension/js/*.json
 /backendAndTracker/TaskScheduler/bin/Release/AppController/extension/*.json
 AppControllerUI/package-lock.json
+/backendAndTracker/AppInfoController/bin/Release/net6.0/publish/wwwroot
+/backendAndTracker/AppInfoController/obj/Release/net6.0/PubTmp/Out/wwwroot/UI.zip
+/backendAndTracker/AppInfoController/wwwroot/UI.zip
