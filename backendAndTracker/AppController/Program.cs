@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Device.Location;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -28,12 +29,16 @@ namespace AppController
         private static string _url = "https://www.appcontroller.in/";
         private static DateTime _updatedOn = DateTime.Now;
         private static string _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-        private static List<AppInfo> _failed = new List<AppInfo>();
+        private static Dictionary<Guid, string> _failed = new Dictionary<Guid, string>();
         private static HttpListener _listener;
         private static object _lock = new object();
-
+        private static GeoCoordinateWatcher watcher = new GeoCoordinateWatcher();
+        private static DateTime? watcherStoppedOn = null;
         static void Main()
         {
+            watcher.StatusChanged += Watcher_StatusChanged;
+            // Start the watcher.  
+            watcher.Start();
             var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
             var parentPath = Directory.GetParent(path).FullName;
 
@@ -55,6 +60,15 @@ namespace AppController
             {
                 while (true)
                 {
+                    if(watcherStoppedOn != null && watcherStoppedOn.GetValueOrDefault().Date < DateTime.Now.Date)
+                    {
+                        var appSettings = GetAppSettings();
+                        if (appSettings.HitOn == null || appSettings.HitOn?.Date < DateTime.Now.Date)
+                        {
+                            watcher.Start();
+                        }
+                    }
+
                     UpdateAppSettings(ref appHelper, ref user);
 
                     ProcessFailed();
@@ -83,8 +97,7 @@ namespace AppController
         {
             if (File.Exists(parentPath + "\\App.json"))
             {
-                var data = File.ReadAllText(path + "\\App.json");
-                var appSettings = JsonConvert.DeserializeObject<AppSettings>(data);
+                var appSettings = GetAppSettings();
 
                 var data1 = File.ReadAllText(parentPath + "\\App.json");
                 var appSettings1 = JsonConvert.DeserializeObject<AppSettings>(data1);
@@ -92,16 +105,15 @@ namespace AppController
                 appSettings.EnableExn = appSettings1.EnableExn;
                 appSettings.PrivateModeDisable = appSettings1.PrivateModeDisable;
                 appSettings.LastModified = appSettings1.LastModified;
-                File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+                appSettings.HitOn = appSettings1.HitOn;
+                WriteAppSettings(appSettings);
                 File.Delete(parentPath + "\\App.json");
             }
         }
 
         private static void DisablePrivateMode(string path)
         {
-            var data = File.ReadAllText(path + "\\App.json");
-
-            var appSettings = JsonConvert.DeserializeObject<AppSettings>(data);
+            var appSettings = GetAppSettings();
             if (!appSettings.PrivateModeDisable)
             {
                 var chromeKeys = new string[4] { "SOFTWARE", "Policies", "Google", "Chrome" };
@@ -109,7 +121,7 @@ namespace AppController
                 AddKey(chromeKeys, "IncognitoModeAvailability");
                 AddKey(edgeKeys, "InPrivateModeAvailability");
                 appSettings.PrivateModeDisable = true;
-                File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+                WriteAppSettings(appSettings);
             }
         }
 
@@ -191,18 +203,16 @@ namespace AppController
                         var res = new ExtensionUpdate() { IsModified = false };
                         var directory = new DirectoryInfo(path + "\\Extension\\js");
                         var modifiedDate = directory.GetFiles().Max(file => file.LastWriteTime);
-                        var data = File.ReadAllText(path + "\\App.json");
-
-                        var appSettings = JsonConvert.DeserializeObject<AppSettings>(data);
+                        var appSettings = GetAppSettings();
                         if (appSettings.LastModified == null)
                         {
                             appSettings.LastModified = modifiedDate;
-                            File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+                            WriteAppSettings(appSettings);
                         }
                         else if (appSettings.LastModified < modifiedDate)
                         {
                             appSettings.LastModified = modifiedDate;
-                            File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+                            WriteAppSettings(appSettings);
                             res.IsModified = true;
                         }
                         return JsonConvert.SerializeObject(res);
@@ -244,10 +254,10 @@ namespace AppController
                         {
                             var t = Task.Run(async () =>
                             {
-                                var result = await PostDataInner(item);
+                                var result = await PostDataInner(item.Value, "/appinfo", item.Key);
                                 if (result)
                                 {
-                                    _failed.Remove(item);
+                                    _failed.Remove(item.Key);
                                 }
                             });
                             t.Wait();
@@ -442,10 +452,11 @@ namespace AppController
                 Summary = summary,
                 User = user,
             };
-            await PostDataInner(appInfo);
+            var payload = JsonConvert.SerializeObject(appInfo);
+            await PostDataInner(payload, "/appinfo", Guid.NewGuid());
         }
 
-        private static async Task<bool> PostDataInner(AppInfo appInfo)
+        private static async Task<bool> PostDataInner(string payload, string endpoint, Guid id)
         {
             try
             {
@@ -458,28 +469,25 @@ namespace AppController
                 // Set the base address to simplify maintenance & requests
                 client.BaseAddress = new Uri(_url);
 
-                // Serialize class into JSON
-                var payload = JsonConvert.SerializeObject(appInfo);
-
                 // Wrap our JSON inside a StringContent object
                 var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
                 // Post to the endpoint
-                var response = await client.PostAsync("/appinfo", content);
+                var response = await client.PostAsync(endpoint, content);
                 return true;
             }
             catch(Exception ex)
             {
                 WriteException(ex);
-                if(!_failed.Contains(appInfo))
+                if(!_failed.ContainsKey(id))
                 {
-                    _failed.Add(appInfo);
+                    _failed.Add(id, payload);
                 }
                 return false;
             }
         }
 
-        private static async Task<Helper> GetAppData(string user)
+        private static async Task<Helper> GetAppData(string user, string summary = "")
         {
             var processing = true;
             Helper helper = null;
@@ -517,6 +525,58 @@ namespace AppController
                 }
             }
             return helper;
+        }
+
+        private static void Watcher_StatusChanged(object sen, GeoPositionStatusChangedEventArgs e) // Find GeoLocation of Device  
+        {
+            try
+            {
+                if (e.Status == GeoPositionStatus.Ready)
+                {
+                    if (!watcher.Position.Location.IsUnknown)
+                    {
+                        var summary = string.Empty;
+                        var appSettings = GetAppSettings();
+                        if (appSettings.HitOn == null || appSettings.HitOn?.Date < DateTime.Now.Date)
+                        {
+                            var latitude = watcher.Position.Location.Latitude.ToString();
+                            var longitute = watcher.Position.Location.Longitude.ToString();
+                            summary = $"Latitude: {latitude}, Longitude: {longitute}";
+                            appSettings.HitOn = DateTime.Now.Date;
+                            WriteAppSettings(appSettings);
+                            watcher.Stop();
+                            watcherStoppedOn = appSettings.HitOn;
+                            var latLongInfo = new LatLongInfo()
+                            {
+                                User = GetUser(),
+                                Summary = summary
+                            };
+                            var payload = JsonConvert.SerializeObject(latLongInfo);
+                            var ta = Task.Run(async () =>
+                                {
+                                    var response = await PostDataInner(payload, "/appinfo/SetLatLong", Guid.NewGuid());
+                                });
+                            ta.Wait();
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private static AppSettings GetAppSettings()
+        {
+            var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
+            var data = File.ReadAllText(path + "\\App.json");
+            return JsonConvert.DeserializeObject<AppSettings>(data);
+        }
+
+        private static void WriteAppSettings(AppSettings appSettings)
+        {
+            var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
+            File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
         }
     }
 
@@ -562,6 +622,7 @@ namespace AppController
     {
         public int EnableExn { get; set; }
         public DateTime? LastModified { get; set;}
+        public DateTime? HitOn { get; set;}
 
         public bool PrivateModeDisable { get; set; }
     }
@@ -574,5 +635,11 @@ namespace AppController
     public class UserDetail
     {
         public string User { get; set; }
+    }
+
+    public class LatLongInfo
+    {
+        public string User { get; set; }
+        public string Summary { get; set; }
     }
 }

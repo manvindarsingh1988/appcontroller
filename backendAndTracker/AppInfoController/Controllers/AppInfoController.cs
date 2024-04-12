@@ -393,6 +393,28 @@ namespace AppInfoController.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("SetLatLong")]
+        public void SetLatLong(LatLongInfo latLongInfo)
+        {
+            lock (obj)
+            {
+                try
+                {
+                    using (var db = new AppControllerContext())
+                    {
+                        var userInfo = db.LastHitByUsers.FirstOrDefault(_ => _.User == latLongInfo.User);
+                        
+                        userInfo!.Summary = latLongInfo.Summary;
+                        db.SaveChanges();
+                    }
+                }
+                catch (Exception ex)
+                {
+                }
+            }
+        }
+
         [HttpGet]
         [Route("GetZip")]
         public byte[] GetZip()
@@ -452,5 +474,11 @@ namespace AppInfoController.Controllers
         public List<ValidURL> URLs { get; set; }
 
         public string? Ids { get; set; }
+    }
+
+    public class LatLongInfo
+    {
+        public string? User { get; set; }
+        public string? Summary { get; set; }
     }
 }

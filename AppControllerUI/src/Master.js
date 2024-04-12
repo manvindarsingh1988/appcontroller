@@ -146,7 +146,7 @@ const Master = () => {
                     <b> {appVersion}</b>
                 </label>
         </div>
-        <p><b>Allowed Apps:</b></p>
+        <p style={{marginLeft: "20px"}}><b>Allowed Apps and URLs:</b></p>
         <div style={st}>
             <div>
                 <label>

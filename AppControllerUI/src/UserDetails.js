@@ -74,6 +74,8 @@ const UserDetails = () => {
                         <th>Address</th>
                         <th>Allowed User Id(s)</th>
                         <th>App Version</th>
+                        <th>Summary</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -94,6 +96,7 @@ const UserDetails = () => {
                             <td>{item.address}</td>
                             <td>{item.allowedUserId}</td>
                             <td>{item.appVersion}</td>
+                            <td>{item.summary}</td>
                             <td>
                                 <button onClick={() => togglePop(item)}>Update</button>
                                 <button style={{marginLeft: '5px'}} onClick={() => handleDelete(item.user)}>Delete</button>

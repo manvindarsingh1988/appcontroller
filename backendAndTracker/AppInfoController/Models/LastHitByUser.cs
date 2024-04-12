@@ -24,5 +24,6 @@ namespace AppInfoController.Models
         public string? AllowedUserId { get; set; }
 
         public string? AppVersion { get; set; }
+        public string? Summary { get; set; }
     }
 }

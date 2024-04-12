@@ -102,6 +102,9 @@ namespace AppInfoController.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Summary")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("User")
                         .HasColumnType("TEXT");
 
