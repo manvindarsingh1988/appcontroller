@@ -1,7 +1,7 @@
 import { useState, useEffect }  from 'react';
 import axios from 'axios';
-import './Master.css';
-import URL from './url.json';
+import '../css/Master.css';
+import URL from '../data/url.json';
 
 const Master = () => {
     const [updatedOn, setUpdatedOn] = useState(0)
