@@ -13,7 +13,7 @@ export default function App() {
   }
   return (
     <BrowserRouter>
-      <div className="sticky">
+    <div id="container">      
         <ul className="ul">
           <li className="li">
             <NavLink to="/" activeClassName="active">
@@ -36,7 +36,7 @@ export default function App() {
           <Route exact path="/Master" element={<Master />}></Route>
           <Route exact path="/UserDetails" element={<UserDetails />}></Route>
         </Routes>
-      </div>
+      </div>    
     </BrowserRouter>
   );
 }

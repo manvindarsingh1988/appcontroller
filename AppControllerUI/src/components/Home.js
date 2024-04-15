@@ -12,49 +12,6 @@ import {
 import { matchSorter } from "match-sorter";
 import URL from "../data/url.json";
 
-const Styles = styled.div`
-  padding: 1rem;
-
-  .row {
-    box-sizing: border-box;
-    display: flex;
-    flex: 0 1 auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    margin-right: var(--gutter-compensation, -0.5rem);
-    margin-left: var(--gutter-compensation, -0.5rem);
-  }
-
-  .col-xs-6 {
-    flex-basis: 50%;
-  }
-
-  table {
-    border-spacing: 0;
-    border: 1px solid black;
-    tr {
-      :last-child {
-        td {
-          border-bottom: 0;
-        }
-      }
-    }
-
-    th,
-    td {
-      margin: 0;
-      padding: 0.5rem;
-      border-bottom: 1px solid black;
-      border-right: 1px solid black;
-      max-width: 500px;
-      word-wrap: break-word;
-    }
-  }
-  .pagination {
-    padding: 0.5rem;
-  }
-`;
-
 // Define a default UI for filtering
 function DefaultColumnFilter({
   column: { filterValue, preFilteredRows, setFilter },
@@ -111,7 +68,7 @@ function dateBetweenFilterFn(rows, id, filterValues) {
   if (ed || sd) {
     return rows.filter((r) => {
       let dateAndHour = r.values[id].split(" ");
-      var [day, month, year] = dateAndHour[0].split("-");
+      var [day, month, year] = dateAndHour.includes('-') ? dateAndHour[0].split("-") : dateAndHour[0].split("/");
       var [hours, minutes, seconds] = dateAndHour[1].split(":");
 
       const cellDate = new Date(year, month - 1, day, hours, minutes, seconds);
@@ -274,7 +231,7 @@ function Pagination({
   selectedFlatRows,
 }) {
   return (
-    <div className="pagination">
+    <div id="search">
       <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
         {"<<"}
       </button>{" "}
@@ -392,6 +349,7 @@ function Table({ columns, data, handleCheckboxSelection }) {
         // Let's make a column for selection
         {
           id: "selection",
+          width: 20,
           // The header can use the table's getToggleAllRowsSelectedProps method
           // to render a checkbox
           Header: ({ getToggleAllRowsSelectedProps }) => (
@@ -425,34 +383,25 @@ function Table({ columns, data, handleCheckboxSelection }) {
     pageSize,
     setPageSize,
   };
-
+  let filterRow = false;   
   return (
     <>
-      <Pagination
+      <Pagination 
         handleCheckboxSelection={handleCheckboxSelection}
         selectedFlatRows={selectedFlatRows}
         {...paginationProps}
       />
-      <div id="table-wrapper">
-        <div id="table-scroll">
-          <table {...getTableProps()}>
+      <div id="tablediv">
+        <div id="tablediv-container">
+          <table {...getTableProps()} className="scrolldown">
             <thead>
               {headerGroups.map((headerGroup) => (
-                <tr {...headerGroup.getHeaderGroupProps()}>
+                <tr {...headerGroup.getHeaderGroupProps()} className="red">
                   {headerGroup.headers.map((column) => (
-                    <th
-                      {...column.getHeaderProps(column.getSortByToggleProps())}
+                    <th style={{width : column.width}}
                     >
                       {column.render("Header")}
                       {/* Add a sort direction indicator */}
-                      <span>
-                        {column.isSorted
-                          ? column.isSortedDesc
-                            ? " 🔽"
-                            : " 🔼"
-                          : ""}
-                      </span>
-                      {/* Render the columns filter UI */}
                       <div>
                         {column.canFilter ? column.render("Filter") : null}
                       </div>
@@ -461,20 +410,22 @@ function Table({ columns, data, handleCheckboxSelection }) {
                 </tr>
               ))}
             </thead>
-            <tbody {...getTableBodyProps()}>
+            <tbody {...getTableBodyProps()}>                               
+               
               {page.map((row, i) => {
                 prepareRow(row);
                 return (
                   <tr
                     {...row.getRowProps()}
                     style={{
-                      backgroundColor: !row.isSelected ? "" : "#04AA6D",
-                      color: !row.isSelected ? "" : "#fff",
+                      backgroundColor: !row.isSelected ? "" : "#dcf7e3",
+                      
                     }}
                   >
                     {row.cells.map((cell) => {
                       return (
-                        <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
+                        <td {...cell.getCellProps()} >                        
+                          <div style={{width : cell.column.width}}>{cell.render("Cell")}</div></td>
                       );
                     })}
                   </tr>
@@ -484,11 +435,6 @@ function Table({ columns, data, handleCheckboxSelection }) {
           </table>
         </div>
       </div>
-      <Pagination
-        handleCheckboxSelection={handleCheckboxSelection}
-        selectedFlatRows={selectedFlatRows}
-        {...paginationProps}
-      />
     </>
   );
 }
@@ -508,31 +454,32 @@ function filterGreaterThan(rows, id, filterValue) {
 filterGreaterThan.autoRemove = (val) => typeof val !== "number";
 
 function Home() {
+  let windowWidth = window.innerWidth;
+  windowWidth = windowWidth - 150 - 610 - 400 - 20 - 35;
   const columns = useMemo(
     () => [
-      {
-        Header: "Info",
-        columns: [
-          {
-            Header: "Date",
-            accessor: "date",
-            Filter: DateRangeColumnFilter,
-            filter: dateBetweenFilterFn,
-          },
-          {
-            Header: "User",
-            accessor: "user",
-          },
-          {
-            Header: "App",
-            accessor: "appName",
-          },
-          {
-            Header: "Summary",
-            accessor: "summary",
-          },
-        ],
-      },
+        {
+          Header: "Date",
+          accessor: "date",
+          Filter: DateRangeColumnFilter,
+          filter: dateBetweenFilterFn,
+          width: 150,
+        },
+        {
+          Header: "User",
+          accessor: "user",
+          width: windowWidth,
+        },
+        {
+          Header: "App",
+          accessor: "appName",
+          width: 610,
+        },
+        {
+          Header: "Summary",
+          accessor: "summary",
+          width: 400,
+        },
     ],
     []
   );
@@ -578,13 +525,13 @@ function Home() {
   };
 
   return (
-    <Styles>
+    <>
       <Table
         columns={columns}
         data={appInfos}
         handleCheckboxSelection={handleDelete}
       />
-    </Styles>
+    </>
   );
 }
 

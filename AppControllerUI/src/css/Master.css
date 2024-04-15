@@ -1,8 +1,52 @@
-table, td, th {
-    border: 1px solid;
+
+  table.masterscrolldown {
+  
+    /* border-collapse: collapse; */
+    border-spacing: 0;
+    border-left: .5px solid;
+    border-right: .5px solid;
+    border-top: .5px solid;
   }
   
-  table {
-    width: 100%;
-    border-collapse: collapse;
+  /* To display the block as level element */
+  table.masterscrolldown tbody,
+  table.masterscrolldown thead {
+    display: block;
+  }
+  
+  table.masterscrolldown tbody {  
+    /* Set the height of table body */
+    height: calc(100vh - 400px);
+  
+    /* Set vertical scroll */
+    overflow-y: auto;
+  
+    /* Hide the horizontal scroll */
+    overflow-x: auto;
+  }
+
+  table.userscrolldown {
+  
+    /* border-collapse: collapse; */
+    border-spacing: 0;
+    border-left: .5px solid;
+    border-right: .5px solid;
+    border-top: .5px solid;
+  }
+  
+  /* To display the block as level element */
+  table.userscrolldown tbody,
+  table.userscrolldown thead {
+    display: block;
+  }
+  
+  table.userscrolldown tbody {  
+    /* Set the height of table body */
+    height: calc(100vh - 140px);
+  
+    /* Set vertical scroll */
+    overflow-y: auto;
+  
+    /* Hide the horizontal scroll */
+    overflow-x: auto;
   }

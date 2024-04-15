@@ -1,6 +1,6 @@
 import { useState, useEffect }  from 'react';
 import axios from 'axios';
-import '../css/Master.css';
+import '../css/App.css';
 import URL from '../data/url.json';
 
 const Master = () => {
@@ -115,14 +115,17 @@ const Master = () => {
         width: 'auto',
         border: '1px solid black',
         padding: '10px',
-        margin: '20px'
+        marginBottom: '10px',
+        marginRight: '20px'
       }
-  
+      let windowWidth = window.innerWidth;
+      windowWidth = windowWidth - 650;
     return (
-      <div style={{marginTop: "20px"}}>
+      <>
+      <div id="search" style={{marginTop: "10px"}}>
         <label>
           <input
-          style={{marginLeft: "20px"}}
+          style={{marginBottom: "10px"}}
             type="checkbox"
             checked={checked}
             onChange={handleChange}
@@ -146,8 +149,8 @@ const Master = () => {
                     <b> {appVersion}</b>
                 </label>
         </div>
-        <p style={{marginLeft: "20px"}}><b>Allowed Apps and URLs:</b></p>
-        <div style={st}>
+        <p ><b>Allowed Apps and URLs:</b></p>
+          <div style={st}>
             <div>
                 <label>
                     Enter Url or App Name:
@@ -173,37 +176,38 @@ const Master = () => {
                     </select>                    
                 </label>
                 <button style={{marginTop: "5px", marginBottom: "5px", marginLeft: "10px"}} onClick={handleSave}>Add</button> 
-            </div>            
-            
-            
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>User</th>
-                            <th>Type</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {apps.map((item, index) => {
-                            return (
-                            <tr key={index}>
-                                <td>{item.name}</td>
-                                <td>{item.user}</td>
-                                <td>{item.type}</td>
-                                <td>
-                                    <button onClick={() => handleDelete(item.id)} >Delete</button>
-                                </td>
-                            </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            
-        </div>
-        
+            </div> 
+          </div>
       </div>
+      <div id="tablediv">
+        <div id="tablediv-container" style={{width: "calc(100% - 18px)", marginLeft: "8px"}}>               
+          <table className="masterscrolldown" >
+              <thead>
+                  <tr className='red'>
+                      <th><div style={{width: windowWidth}}>Name</div></th>
+                      <th><div style={{width: "200px"}}>User</div></th>
+                      <th><div style={{width: "200px"}}>Type</div></th>
+                      <th><div style={{width: "200px"}}>Actions</div></th>
+                  </tr>
+              </thead>
+              <tbody>
+                  {apps.map((item, index) => {
+                      return (
+                      <tr key={index}>
+                          <td ><div style={{width: windowWidth}}>{item.name}</div></td>
+                          <td><div style={{width: "200px"}}>{item.user}</div></td>
+                          <td><div style={{width: "200px"}}>{item.type}</div></td>
+                          <td>
+                          <div style={{width: "200px"}}><button onClick={() => handleDelete(item.id)} >Delete</button></div>
+                          </td>
+                      </tr>
+                      );
+                  })}
+              </tbody>
+          </table>
+        </div>
+      </div>
+      </>
     );
   };
   
