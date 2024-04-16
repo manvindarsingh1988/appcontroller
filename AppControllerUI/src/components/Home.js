@@ -152,8 +152,6 @@ function filterGreaterThan(rows, id, filterValue) {
 filterGreaterThan.autoRemove = (val) => typeof val !== "number";
 
 function Home() {
-  // let windowWidth = window.innerWidth;
-  // windowWidth = windowWidth - 150 - 610 - 400 - 20 - 35;
   const columns = useMemo(
     () => [
       {
