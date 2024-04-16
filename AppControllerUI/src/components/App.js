@@ -16,17 +16,17 @@ export default function App() {
     <div id="container">      
         <ul className="ul">
           <li className="li">
-            <NavLink to="/" activeClassName="active">
+            <NavLink to="/" activeclassname="active">
               Home
             </NavLink>
           </li>
           <li className="li">
-            <NavLink to="/Master" activeClassName="active">
+            <NavLink to="/Master" activeclassname="active">
               Master
             </NavLink>
           </li>
           <li className="li">
-            <NavLink to="/UserDetails" activeClassName="active">
+            <NavLink to="/UserDetails" activeclassname="active">
               User History
             </NavLink>
           </li>

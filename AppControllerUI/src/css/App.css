@@ -1,111 +1,110 @@
-
+body{
+  font-size: 13px;
+}
 
 .ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: #333;
-    flex: 0 0 auto;
-    width: 100%;
-  }
-  
-  .li {
-    float: left;
-    border-right:1px solid #bbb;
-  }
-  
-  li:last-child {
-    border-right: none;
-  }
-  
-  .li a {
-    display: block;
-    color: white;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
-  }
-  
-  .li a:hover:not(.active) {
-    background-color: #111;
-  }
-  
-  .active {
-    background-color: #04AA6D;
-  }
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+  flex: 0 0 auto;
+  width: 100%;
+}
 
-  #container {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  #search {
-    flex: 0 0 auto;
-    width: 100%;
-    margin: 10px;
-  }
-  
-  #tablediv {
-    flex: 1 1 auto;
-    width: 100%;
-    position: relative;
-  }
-  
-  #tablediv-container {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-  }
-  
-  #tablediv-container table {
-    width: 100%;
-  }
-  table.scrolldown {
-  
-    /* border-collapse: collapse; */
-    border-spacing: 0;
-    border-left: .5px solid;
-    border-right: .5px solid;
-    border-top: .5px solid;
-  }
-  
-  /* To display the block as level element */
-  table.scrolldown tbody,
-  table.scrolldown thead {
-    display: block;
-  }
-  
-  tr.red th {
-    background: #04AA6D;
-    color: white;
-    border-color: black;
-    height: 30px;
-  }
-  
-  table.scrolldown tbody {
-  
-    /* Set the height of table body */
-    height: calc(100vh - 170px);
-  
-    /* Set vertical scroll */
-    overflow-y: auto;
-  
-    /* Hide the horizontal scroll */
-    overflow-x: auto;
-  }
-  
-  tbody td,
-  thead th {
-    border-right: .5px solid;
-    border-bottom: .5px solid;
-  }
-  
-  td {
-    text-align: Left;
-  }
-  
-  
+.li {
+  float: left;
+  border-right: 1px solid #bbb;
+}
+
+li:last-child {
+  border-right: none;
+}
+
+.li a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+.li a:hover:not(.active) {
+  background-color: #111;
+}
+
+.active {
+  background-color: #04aa6d;
+}
+
+#container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#search {
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 10px;
+}
+
+#tablediv {
+  flex: 1 1 auto;
+  width: 100%;
+  position: relative;
+  font-size: 13px;
+}
+
+#tablediv-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+#tablediv-container table {
+  width: 100%;
+}
+
+table.scrolldown {
+  border-spacing: 0;
+  border-left: 0.5px solid;
+  border-right: 0.5px solid;
+  border-top: 0.5px solid;
+}
+
+/* To display the block as level element */
+table.scrolldown tbody,
+table.scrolldown thead {
+  display: block;
+}
+
+tr.red th {
+  background: #04aa6d;
+  color: white;
+  border-color: black;
+  height: 30px;
+}
+
+table.scrolldown tbody {
+  /* Set the height of table body */
+  height: calc(100vh - 170px);
+
+  /* Set vertical scroll */
+  overflow-y: auto;
+
+  /* Hide the horizontal scroll */
+  overflow-x: auto;
+}
+
+tbody td,
+thead th {
+  border-right: 0.5px solid;
+  border-bottom: 0.5px solid;
+}
+
+td {
+  text-align: Left;
+}
