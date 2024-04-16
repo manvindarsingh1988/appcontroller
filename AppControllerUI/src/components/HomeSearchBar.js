@@ -2,7 +2,7 @@ function HomeSearchBar() {
   return (
     <div className="container">
       <div class="input-group mb-3 mt-3">
-        <button
+        {/* <button
           class="btn btn-outline-secondary dropdown-toggle"
           type="button"
           data-bs-toggle="dropdown"
@@ -10,7 +10,7 @@ function HomeSearchBar() {
         >
           Dropdown
         </button>
-        <ul class="dropdown-menu">
+        <ul class="dropdown-menu" style={{zIndex: 10000000}}>
           <li>
             <a className="dropdown-item" href="#">
               Action
@@ -26,10 +26,11 @@ function HomeSearchBar() {
               Something else here
             </a>
           </li>
-        </ul>
+        </ul> */}
         <input
           type="text"
           class="form-control"
+          placeholder="Search Text here..."
           aria-label="Text input with dropdown button"
         />
       </div>

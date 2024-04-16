@@ -183,7 +183,7 @@ function Table({ columns, data, handleCheckboxSelection }) {
         <div id="tablediv-container"> */}
       <div className="table-responsive">
         <table {...getTableProps()} className="table">
-          <thead className="sticky-top">
+          <thead className="sticky-top bg-success p-2 text-white">
             {headerGroups.map((headerGroup) => (
               <tr {...headerGroup.getHeaderGroupProps()} className="red">
                 {headerGroup.headers.map((column) => (

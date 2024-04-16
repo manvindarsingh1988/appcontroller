@@ -82,7 +82,6 @@ table.scrolldown thead {
 }
 
 tr.red th {
-  background: #04aa6d;
   color: white;
   border-color: black;
   height: 30px;
