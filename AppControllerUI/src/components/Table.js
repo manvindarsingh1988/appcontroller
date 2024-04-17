@@ -4,6 +4,7 @@ import {
   useFilters,
   usePagination,
   useRowSelect,
+  useGlobalFilter,
   useSortBy,
 } from "react-table";
 // A great library for fuzzy filtering/sorting items
@@ -124,6 +125,7 @@ function Table({ columns, data, handleCheckboxSelection }) {
 
     state,
     selectedFlatRows,
+    setGlobalFilter,
   } = useTable(
     {
       columns,
@@ -133,6 +135,7 @@ function Table({ columns, data, handleCheckboxSelection }) {
       initialState: { pageSize: 100 },
     },
     useFilters,
+    useGlobalFilter,
     useSortBy,
     usePagination,
     useRowSelect,
@@ -175,25 +178,21 @@ function Table({ columns, data, handleCheckboxSelection }) {
     pageSize,
     setPageSize,
   };
+
   return (
     <>
-      {/* Search Bar */}
-      <HomeSearchBar/>
-      {/* <div id="tablediv">
-        <div id="tablediv-container"> */}
+      <HomeSearchBar filterRows={setGlobalFilter} />
       <div className="table-responsive">
         <table {...getTableProps()} className="table">
           <thead className="sticky-top bg-success p-2 text-white">
             {headerGroups.map((headerGroup) => (
-              <tr {...headerGroup.getHeaderGroupProps()} className="red">
+              <tr
+                {...headerGroup.getHeaderGroupProps()}
+                className="red"
+                key={headerGroup.key}
+              >
                 {headerGroup.headers.map((column) => (
-                  <th>
-                    {column.render("Header")}
-                    {/* Add a sort direction indicator */}
-                    {/* <div>
-                      {column.canFilter ? column.render("Filter") : null}
-                    </div> */}
-                  </th>
+                  <th key={column.key}>{column.render("Header")}</th>
                 ))}
               </tr>
             ))}
@@ -203,6 +202,7 @@ function Table({ columns, data, handleCheckboxSelection }) {
               prepareRow(row);
               return (
                 <tr
+                  key={row.key}
                   {...row.getRowProps()}
                   style={{
                     backgroundColor: !row.isSelected ? "" : "#dcf7e3",
@@ -210,7 +210,9 @@ function Table({ columns, data, handleCheckboxSelection }) {
                 >
                   {row.cells.map((cell) => {
                     return (
-                      <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
+                      <td key={cell.key} {...cell.getCellProps()}>
+                        {cell.render("Cell")}
+                      </td>
                     );
                   })}
                 </tr>
