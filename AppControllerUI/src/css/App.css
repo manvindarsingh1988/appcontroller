@@ -102,6 +102,8 @@ tbody td,
 thead th {
   border-right: 0.5px solid;
   border-bottom: 0.5px solid;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 td {

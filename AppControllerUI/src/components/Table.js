@@ -1,47 +1,16 @@
-import { useEffect, useMemo, forwardRef, useRef } from "react";
+import { useEffect, useMemo, forwardRef, useRef, useState } from "react";
 import {
   useTable,
   useFilters,
   usePagination,
   useRowSelect,
-  useGlobalFilter,
   useSortBy,
 } from "react-table";
 // A great library for fuzzy filtering/sorting items
 import { matchSorter } from "match-sorter";
 import Pagination from "./Pagination";
 import HomeSearchBar from "./HomeSearchBar";
-
-function SelectColumnFilter({
-  column: { filterValue, setFilter, preFilteredRows, id },
-}) {
-  // Calculate the options for filtering
-  // using the preFilteredRows
-  const options = useMemo(() => {
-    const options = new Set();
-    preFilteredRows.forEach((row) => {
-      options.add(row.values[id]);
-    });
-    return [...options.values()];
-  }, [id, preFilteredRows]);
-
-  // Render a multi-select box
-  return (
-    <select
-      value={filterValue}
-      onChange={(e) => {
-        setFilter(e.target.value || undefined);
-      }}
-    >
-      <option value="">All</option>
-      {options.map((option, i) => (
-        <option key={i} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  );
-}
+import useCustomGlobalFilter from "./hooks/useCustomGlobalFilter";
 
 const IndeterminateCheckbox = forwardRef(({ indeterminate, ...rest }, ref) => {
   const defaultRef = useRef();
@@ -78,6 +47,8 @@ function fuzzyTextFilterFn(rows, id, filterValue) {
 fuzzyTextFilterFn.autoRemove = (val) => !val;
 
 function Table({ columns, data, handleCheckboxSelection }) {
+  const [globalFilter, setGlobalFilter] = useState("");
+
   const filterTypes = useMemo(
     () => ({
       // Add a new fuzzyTextFilterFn filter type.
@@ -125,17 +96,16 @@ function Table({ columns, data, handleCheckboxSelection }) {
 
     state,
     selectedFlatRows,
-    setGlobalFilter,
   } = useTable(
     {
       columns,
-      data,
+      data: useCustomGlobalFilter(data, columns, globalFilter), // Apply global filter to data,
       defaultColumn, // Be sure to pass the defaultColumn option
       filterTypes,
       initialState: { pageSize: 100 },
     },
     useFilters,
-    useGlobalFilter,
+    useCustomGlobalFilter,
     useSortBy,
     usePagination,
     useRowSelect,
@@ -179,9 +149,14 @@ function Table({ columns, data, handleCheckboxSelection }) {
     setPageSize,
   };
 
+  function filterRows(searchText) {
+    setGlobalFilter(searchText);
+    gotoPage(0);
+  }
+
   return (
     <>
-      <HomeSearchBar filterRows={setGlobalFilter} />
+      <HomeSearchBar filterValue={globalFilter} filterRows={filterRows} />
       <div className="table-responsive">
         <table {...getTableProps()} className="table">
           <thead className="sticky-top bg-success p-2 text-white">

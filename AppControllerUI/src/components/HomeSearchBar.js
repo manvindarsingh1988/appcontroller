@@ -10,31 +10,6 @@ function HomeSearchBar({ filterRows }) {
   return (
     <div className="container">
       <div className="input-group mb-3 mt-3">
-        {/* <button
-          class="btn btn-outline-secondary dropdown-toggle"
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        >
-          Dropdown
-        </button>
-        <ul class="dropdown-menu" style={{zIndex: 10000000}}>
-          <li>
-            <a className="dropdown-item" href="#">
-              User
-            </a>
-          </li>
-          <li>
-            <a className="dropdown-item" href="#">
-              Another action
-            </a>
-          </li>
-          <li>
-            <a className="dropdown-item" href="#">
-              Something else here
-            </a>
-          </li>
-        </ul> */}
         <input
           type="text"
           className="form-control"
