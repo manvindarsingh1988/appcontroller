@@ -1,4 +1,5 @@
 import { useState } from "react";
+import QueryModal from "./QueryModal";
 
 function HomeSearchBar({ filterRows }) {
   const [text, setText] = useState("");
@@ -77,6 +78,22 @@ function HomeSearchBar({ filterRows }) {
         >
           Date
         </button>
+
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm ms-1"
+          onClick={() => appendTextInSearchBar("App")}
+        >
+          AND
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm ms-1 me-2"
+          onClick={() => appendTextInSearchBar("User")}
+        >
+          OR
+        </button>
+
         <button
           type="button"
           className="btn btn-secondary btn-sm ms-1"
@@ -105,6 +122,15 @@ function HomeSearchBar({ filterRows }) {
         >
           {"contains"}
         </button>
+        <a
+          href="#"
+          className="ms-5 alert-link me-1 pt-2"
+          data-bs-toggle="modal"
+          data-bs-target="#queryModal"
+        >
+          How to use?
+        </a>
+        <QueryModal />
       </div>
     </div>
   );
