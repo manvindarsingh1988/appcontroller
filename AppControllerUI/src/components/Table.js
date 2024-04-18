@@ -11,6 +11,7 @@ import { matchSorter } from "match-sorter";
 import Pagination from "./Pagination";
 import HomeSearchBar from "./HomeSearchBar";
 import useCustomGlobalFilter from "./hooks/useCustomGlobalFilter";
+import useCustomQueryFilter from "./hooks/useCustomQueryFilter";
 
 const IndeterminateCheckbox = forwardRef(({ indeterminate, ...rest }, ref) => {
   const defaultRef = useRef();
@@ -99,13 +100,13 @@ function Table({ columns, data, handleCheckboxSelection }) {
   } = useTable(
     {
       columns,
-      data: useCustomGlobalFilter(data, columns, globalFilter), // Apply global filter to data,
+      // data: useCustomGlobalFilter(data, columns, globalFilter), // Apply global filter to data,
+      data: useCustomQueryFilter(data, columns, globalFilter),
       defaultColumn, // Be sure to pass the defaultColumn option
       filterTypes,
       initialState: { pageSize: 100 },
     },
     useFilters,
-    useCustomGlobalFilter,
     useSortBy,
     usePagination,
     useRowSelect,
