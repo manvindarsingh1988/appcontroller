@@ -151,65 +151,60 @@ const Master = () => {
               onChange={(e) => setValidity(e.target.value)}
             />
           </label>
-          <button
-            className="btn btn-primary btn-sm ms-2"
-            onClick={updateValidity}
-          >
+          <button className="btn btn-primary ms-2" onClick={updateValidity}>
             Update
           </button>
         </div>
         <div className="border border-1 radius-2 m-2 p-2">
           <label className="form-label">
             Latest Application Version:
-            <b> {appVersion}</b>
+            <b>{appVersion}</b>
           </label>
         </div>
         <p className="ms-2 mt-2 mb-0">
           <b>Allowed Apps and URLs:</b>
         </p>
         <div className="border border-1 radius-2 m-2 p-2">
-          <div>
-            <label className="form-label">
-              Enter Url or App Name:
-              <input
-                className="form-control"
-                name="name"
-                type="text"
-                value={formValues.name}
-                onChange={handleNameAndType}
-              />
-            </label>
-            <label className="form-label">
-              Enter User:
-              <input
-                className="form-control"
-                name="user"
-                type="text"
-                value={formValues.user}
-                onChange={handleNameAndType}
-              />
-            </label>
-            <label className="form-label">
-              Pick a Type:
-              <select
-                className="form-select"
-                id="selectedtype"
-                name="type"
-                onChange={handleNameAndType}
-                value={formValues.type}
-              >
-                <option value="URL">URL</option>
-                <option value="App">App</option>
-              </select>
-            </label>
-            <button className="btn btn-primary btn ms-2" onClick={handleSave}>
-              Add
-            </button>
-          </div>
+          <label className="form-label  me-2">
+            Enter Url or App Name:
+            <input
+              className="form-control"
+              name="name"
+              type="text"
+              value={formValues.name}
+              onChange={handleNameAndType}
+            />
+          </label>
+          <label className="form-label me-2">
+            Enter User:
+            <input
+              className="form-control"
+              name="user"
+              type="text"
+              value={formValues.user}
+              onChange={handleNameAndType}
+            />
+          </label>
+          <label className="form-label me-2">
+            Pick a Type:
+            <select
+              className="form-select"
+              id="selectedtype"
+              name="type"
+              onChange={handleNameAndType}
+              value={formValues.type}
+            >
+              <option value="URL">URL</option>
+              <option value="App">App</option>
+            </select>
+          </label>
+          <button className="btn btn-primary btn ms-2" onClick={handleSave}>
+            Add
+          </button>
         </div>
       </div>
       <div className="table-responsive" id="tablediv">
-        <table className="table mx-2">
+        <table className="table mx-3">
           <thead className="sticky-top bg-success p-2 text-white">
             <tr className="red">
               <th>Name</th>
