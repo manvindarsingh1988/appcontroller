@@ -209,57 +209,52 @@ const Master = () => {
           </div>
         </div>
       </div>
-      <div id="tablediv">
-        <div
-          id="tablediv-container"
-          style={{ width: "calc(100% - 18px)", marginLeft: "8px" }}
-        >
-          <table className="masterscrolldown">
-            <thead>
-              <tr className="red">
-                <th>
-                  <div style={{ width: windowWidth }}>Name</div>
-                </th>
-                <th>
-                  <div style={{ width: "200px" }}>User</div>
-                </th>
-                <th>
-                  <div style={{ width: "200px" }}>Type</div>
-                </th>
-                <th>
-                  <div style={{ width: "200px" }}>Actions</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {apps.map((item, index) => {
-                return (
-                  <tr key={index}>
-                    <td>
-                      <div style={{ width: windowWidth }}>{item.name}</div>
-                    </td>
-                    <td>
-                      <div style={{ width: "200px" }}>{item.user}</div>
-                    </td>
-                    <td>
-                      <div style={{ width: "200px" }}>{item.type}</div>
-                    </td>
-                    <td>
-                      <div style={{ width: "200px" }}>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      <div className="table-responsive" id="tablediv">
+        <table className="table">
+          <thead className="sticky-top bg-success p-2 text-white">
+            <tr className="red">
+              <th>
+                <div style={{ width: windowWidth }}>Name</div>
+              </th>
+              <th>
+                <div style={{ width: "200px" }}>User</div>
+              </th>
+              <th>
+                <div style={{ width: "200px" }}>Type</div>
+              </th>
+              <th>
+                <div style={{ width: "200px" }}>Actions</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {apps.map((item, index) => {
+              return (
+                <tr key={index}>
+                  <td>
+                    <div style={{ width: windowWidth }}>{item.name}</div>
+                  </td>
+                  <td>
+                    <div style={{ width: "200px" }}>{item.user}</div>
+                  </td>
+                  <td>
+                    <div style={{ width: "200px" }}>{item.type}</div>
+                  </td>
+                  <td>
+                    <div style={{ width: "200px" }}>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </>
   );
