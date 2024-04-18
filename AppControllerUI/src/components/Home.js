@@ -159,18 +159,22 @@ function Home() {
         accessor: "date",
         Filter: DateRangeColumnFilter,
         filter: dateBetweenFilterFn,
+        type: "date"
       },
       {
         Header: "User",
         accessor: "user",
+        type: "string"
       },
       {
         Header: "App",
         accessor: "appName",
+        type: "string"
       },
       {
         Header: "Summary",
         accessor: "summary",
+        type: "string"
       },
     ],
     []

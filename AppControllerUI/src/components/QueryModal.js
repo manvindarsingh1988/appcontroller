@@ -1,14 +1,26 @@
 function QueryModal() {
   function handleCopyToClipboard(event) {
+    function showFadingAlert() {
+      // Show the alert
+      const alert = document.getElementById("fadingAlert");
+      alert.style.display = "block";
+
+      // Automatically hide the alert after 3 seconds
+      setTimeout(function () {
+        alert.style.display = "none";
+      }, 1000); // 3000 milliseconds = 3 seconds
+    }
+
     const text = event.target.parentElement.querySelector("samp").textContent;
     navigator.clipboard.writeText(text);
+    showFadingAlert();
   }
 
   return (
     <div
       className="modal fade"
       id="queryModal"
-      tabindex="-1"
+      tabIndex="-1"
       aria-labelledby="queryModalLabel"
       aria-hidden="true"
     >
@@ -26,6 +38,14 @@ function QueryModal() {
             ></button>
           </div>
           <div className="modal-body">
+            <div
+              class="alert alert-success fade show"
+              role="alert"
+              id="fadingAlert"
+              style={{ display: "none" }}
+            >
+              Text copied to clipboard...
+            </div>
             <p>
               <strong>
                 With the help Query Language you can filter data pefectly
@@ -48,7 +68,8 @@ function QueryModal() {
               </li>
               <li>
                 <strong>{"contains : "}</strong>contains, can be used for text
-              </li>
+              </li>{" "}
+              <br />
               <li>
                 <strong>{"AND : "}</strong>AND, can be used to add more
                 conditions

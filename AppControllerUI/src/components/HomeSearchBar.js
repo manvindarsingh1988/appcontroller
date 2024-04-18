@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import QueryModal from "./QueryModal";
 
 function HomeSearchBar({ filterRows }) {
@@ -15,9 +15,9 @@ function HomeSearchBar({ filterRows }) {
     filterRows("");
   }
 
-  const appendTextInSearchBar = (additionalText) => {
-    setText((prevText) => prevText + additionalText + " ");
-  };
+  const appendTextInSearchBar = useCallback((additionalText) => {
+    setText((prevText) => prevText + " " + additionalText + " ");
+  }, []);
 
   return (
     <div className="container">
@@ -28,8 +28,8 @@ function HomeSearchBar({ filterRows }) {
           placeholder="Write Query Language Here"
           aria-label="Text input with dropdown button"
           id="homeSearchBar"
-          defaultValue={text}
-          // onKeyUp={handleSearch}
+          value={text}
+          onChange={useCallback((e) => setText(e.target.value), [])}
         />
         <button
           className="btn btn-outline-primary"
@@ -78,18 +78,17 @@ function HomeSearchBar({ filterRows }) {
         >
           Date
         </button>
-
         <button
           type="button"
           className="btn btn-secondary btn-sm ms-1"
-          onClick={() => appendTextInSearchBar("App")}
+          onClick={() => appendTextInSearchBar("AND")}
         >
           AND
         </button>
         <button
           type="button"
           className="btn btn-secondary btn-sm ms-1 me-2"
-          onClick={() => appendTextInSearchBar("User")}
+          onClick={() => appendTextInSearchBar("OR")}
         >
           OR
         </button>
