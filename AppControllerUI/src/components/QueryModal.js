@@ -39,7 +39,7 @@ function QueryModal() {
           </div>
           <div className="modal-body">
             <div
-              class="alert alert-success fade show"
+              className="alert alert-success fade show"
               role="alert"
               id="fadingAlert"
               style={{ display: "none" }}
@@ -91,6 +91,9 @@ function QueryModal() {
                 type="button"
                 className="ms-2 btn btn-sm btn-outline-primary"
                 onClick={handleCopyToClipboard}
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Copy to clipboard"
               >
                 Copy
               </button>
@@ -104,6 +107,9 @@ function QueryModal() {
                 type="button"
                 className="ms-2 btn btn-sm btn-outline-primary"
                 onClick={handleCopyToClipboard}
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Copy to clipboard"
               >
                 Copy
               </button>
