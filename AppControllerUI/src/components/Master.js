@@ -127,21 +127,20 @@ const Master = () => {
     marginBottom: "10px",
     marginRight: "20px",
   };
-  let windowWidth = window.innerWidth;
-  windowWidth = windowWidth - 650;
+
   return (
     <>
-      <div id="search" style={{ marginTop: "10px" }}>
+      <div id="search">
         <label>
           <input
-            style={{ marginBottom: "10px" }}
+            className="m-2"
             type="checkbox"
             checked={checked}
             onChange={handleChange}
           />
           Kill Apps
         </label>
-        <div style={st}>
+        <div className="border border-1 radius-2 m-2 p-2">
           <label className="form-label">
             User Active Check Time in Minutes:
             <input
@@ -159,18 +158,18 @@ const Master = () => {
             Update
           </button>
         </div>
-        <div style={st}>
+        <div className="border border-1 radius-2 m-2 p-2">
           <label className="form-label">
             Latest Application Version:
             <b> {appVersion}</b>
           </label>
         </div>
-        <p>
+        <p className="ms-2 mt-2 mb-0">
           <b>Allowed Apps and URLs:</b>
         </p>
-        <div style={st}>
+        <div className="border border-1 radius-2 m-2 p-2">
           <div>
-            <label>
+            <label className="form-label">
               Enter Url or App Name:
               <input
                 className="form-control"
@@ -180,7 +179,7 @@ const Master = () => {
                 onChange={handleNameAndType}
               />
             </label>
-            <label style={{ marginLeft: "10px" }}>
+            <label className="form-label">
               Enter User:
               <input
                 className="form-control"
@@ -190,7 +189,7 @@ const Master = () => {
                 onChange={handleNameAndType}
               />
             </label>
-            <label style={{ marginLeft: "10px" }}>
+            <label className="form-label">
               Pick a Type:
               <select
                 className="form-select"
@@ -210,45 +209,29 @@ const Master = () => {
         </div>
       </div>
       <div className="table-responsive" id="tablediv">
-        <table className="table">
+        <table className="table mx-2">
           <thead className="sticky-top bg-success p-2 text-white">
             <tr className="red">
-              <th>
-                <div style={{ width: windowWidth }}>Name</div>
-              </th>
-              <th>
-                <div style={{ width: "200px" }}>User</div>
-              </th>
-              <th>
-                <div style={{ width: "200px" }}>Type</div>
-              </th>
-              <th>
-                <div style={{ width: "200px" }}>Actions</div>
-              </th>
+              <th>Name</th>
+              <th>User</th>
+              <th>Type</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {apps.map((item, index) => {
               return (
                 <tr key={index}>
+                  <td>{item.name}</td>
+                  <td>{item.user}</td>
+                  <td>{item.type}</td>
                   <td>
-                    <div style={{ width: windowWidth }}>{item.name}</div>
-                  </td>
-                  <td>
-                    <div style={{ width: "200px" }}>{item.user}</div>
-                  </td>
-                  <td>
-                    <div style={{ width: "200px" }}>{item.type}</div>
-                  </td>
-                  <td>
-                    <div style={{ width: "200px" }}>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDelete(item.id)}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               );
