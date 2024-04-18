@@ -32,7 +32,7 @@ function HomeSearchBar({ filterRows }) {
           onChange={useCallback((e) => setText(e.target.value), [])}
         />
         <button
-          className="btn btn-outline-primary"
+          className="mx-1 btn btn-outline-primary"
           type="button"
           id="button-addon2"
           onClick={handleSearch}
@@ -40,7 +40,7 @@ function HomeSearchBar({ filterRows }) {
           Search
         </button>{" "}
         <button
-          className="btn btn-outline-secondary"
+          className="mx-1 btn btn-secondary"
           type="button"
           id="button-addon2"
           onClick={handleClear}
@@ -48,7 +48,7 @@ function HomeSearchBar({ filterRows }) {
           Clear
         </button>
       </div>
-      <div className="input-group mb-3">
+      <div className="justify-content-center input-group mb-3">
         <label className="p-2">Key Words for Query Language</label>
         <button
           type="button"
