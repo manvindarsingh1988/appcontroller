@@ -11,6 +11,7 @@ function HomeSearchBar({ filterRows }) {
   }
 
   function handleClear() {
+    setText("")
     document.getElementById("homeSearchBar").value = "";
     filterRows("");
   }

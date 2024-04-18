@@ -61,6 +61,11 @@ const useCustomQueryFilter = (data, columns, query) => {
       let { columnName, operator, value } = parseQuery(q);
       return data.filter((row) => {
         const result = columns.find((c) => c.Header === columnName.trim());
+
+        if (!result) {
+          return false;
+        }
+
         const cellName = result?.accessor;
         const cellType = result?.type;
 
