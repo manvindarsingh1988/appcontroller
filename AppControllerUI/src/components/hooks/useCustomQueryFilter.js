@@ -57,43 +57,69 @@ const useCustomQueryFilter = (data, columns, query) => {
     if (!query) return data;
 
     const queries = query.split(/ (AND|OR) /);
-    const filteredDataArr = queries.map((q) => {
-      let { columnName, operator, value } = parseQuery(q);
-      return data.filter((row) => {
-        const result = columns.find((c) => c.Header === columnName.trim());
+    let filteredDataArr = [];
 
-        if (!result) {
-          return false;
+    let currentQueryResult = data;
+    let useOrCondition = false;
+
+    for (let i = 0; i < queries.length; i++) {
+      const q = queries[i];
+      if (q === "AND") {
+        useOrCondition = false;
+      } else if (q === "OR") {
+        useOrCondition = true;
+      } else {
+        let { columnName, operator, value } = parseQuery(q);
+
+        currentQueryResult = currentQueryResult.filter((row) => {
+          const result = columns.find((c) => c.Header === columnName.trim());
+
+          if (!result) {
+            return false;
+          }
+
+          const cellName = result?.accessor;
+          const cellType = result?.type;
+
+          const cellValue = parseValue(row[cellName], cellType);
+          value = parseValue(value, cellType);
+
+          switch (operator) {
+            case ">":
+              return cellValue > value;
+            case "<":
+              return cellValue < value;
+            case "=":
+              return cellValue === value;
+            case "contains":
+              return cellValue.includes(value);
+            default:
+              return true;
+          }
+        });
+
+        // If using OR condition, concatenate the results with previous query results
+        if (useOrCondition) {
+          filteredDataArr = [...filteredDataArr, ...currentQueryResult];
+        } else {
+          // If using AND condition, store the current query results
+          filteredDataArr.push(currentQueryResult);
         }
+      }
+    }
 
-        const cellName = result?.accessor;
-        const cellType = result?.type;
-
-        const cellValue = parseValue(row[cellName], cellType);
-        value = parseValue(value, cellType);
-
-        switch (operator) {
-          case ">":
-            return cellValue > value;
-          case "<":
-            return cellValue < value;
-          case "=":
-            return cellValue === value;
-          case "contains":
-            return cellValue.includes(value);
-          default:
-            return true;
-        }
+    // Combine the results using the OR condition if any OR exists in the query
+    if (queries.includes("OR")) {
+      return filteredDataArr.reduce((acc, curr) => {
+        return [...new Set([...acc, ...curr])];
+      }, []);
+    } else {
+      // Combine the results using the AND condition
+      return filteredDataArr.reduce((acc, curr) => {
+        return acc.filter((row) => curr.includes(row));
       });
-    });
-
-    if (queries.length === 1) return filteredDataArr[0];
-
-    return queries[1] === "OR"
-      ? filteredDataArr.reduce((acc, curr) => [...acc, ...curr])
-      : filteredDataArr.reduce((acc, curr) =>
-          acc.filter((row) => curr.includes(row))
-        );
+    }
+    
   }, [data, columns, query]);
 
   return filteredData;
