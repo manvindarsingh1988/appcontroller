@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -39,6 +40,59 @@ namespace AppController
             watcher.StatusChanged += Watcher_StatusChanged;
             // Start the watcher.  
             watcher.Start();
+            var user = GetUser();
+            try
+            {                
+                var connection = new HubConnectionBuilder().WithUrl($"{_url}recordinghub").WithAutomaticReconnect().Build();
+                connection.Reconnected += (msg) => connection.InvokeAsync("RegisterUser", user);
+                var helper = new WasapiCaptureHelper(connection);
+                connection.StartAsync().ContinueWith(task =>
+                {
+                    if (task.IsFaulted)
+                    {
+                    }
+                    else
+                    {
+                        try
+                        {
+                            connection.InvokeAsync("RegisterUser", user);
+                            WriteException(new Exception($"RegisterUser-{user}"));
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteException(ex);
+                        }
+                    }
+                }).Wait();
+                connection.On<string>("StartRecording", (message) =>
+                {
+                    try
+                    {
+                        helper.HandleRecording();
+                        WriteException(new Exception($"StartRecording-{user}"));
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteException(ex);
+                    }                    
+                });
+                connection.On<string>("StopRecording", (message) =>
+                {
+                    try
+                    {
+                        helper.isEnable = false;
+                        WriteException(new Exception($"StopRecording-{user}"));
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteException(ex);
+                    }                    
+                });
+            }
+            catch(Exception ex)
+            {
+                WriteException(ex);
+            }
             var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
             var parentPath = Directory.GetParent(path).FullName;
 
@@ -52,15 +106,13 @@ namespace AppController
             var result = _listener.BeginGetContext(new AsyncCallback(Program.ProcessRequest), null);
 
             //result.AsyncWaitHandle.WaitOne();
-
-            var user = GetUser();
             var appHelper = GetAppData(user).Result;
 
             try
             {
                 while (true)
                 {
-                    if(watcherStoppedOn != null && watcherStoppedOn.GetValueOrDefault().Date < DateTime.Now.Date)
+                    if (watcherStoppedOn != null && watcherStoppedOn.GetValueOrDefault().Date < DateTime.Now.Date)
                     {
                         var appSettings = GetAppSettings();
                         if (appSettings.HitOn == null || appSettings.HitOn?.Date < DateTime.Now.Date)

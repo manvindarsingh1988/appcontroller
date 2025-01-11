@@ -1,8 +1,6 @@
 using AppInfoController.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.IO.Compression;
 using System.Text;
 
 namespace AppInfoController.Controllers
@@ -41,6 +39,26 @@ namespace AppInfoController.Controllers
                     var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
                     return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, UserValidity =  userValidity, AppVersion = appVersion };
                 }
+            }
+        }
+
+        [HttpGet]
+        [Route("GetConnectedUsers")]
+        public IEnumerable<MyUserType> GetConnectedUsers()
+        {
+            lock (obj)
+            {
+                return RecordingHub.MyUsers.Select(_ => _.Value);
+            }
+        }
+
+        [HttpGet]
+        [Route("GetLogs")]
+        public IEnumerable<string> GetLogs()
+        {
+            lock (obj)
+            {
+                return RecordingHub.logs;
             }
         }
 

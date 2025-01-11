@@ -18,40 +18,53 @@ namespace AppDownloader
 
         static void Main(string[] args)
         {
-            var user = GetUser();
-            var appHelper = GetAppData(user).Result;
-            var t = Task.Run(async () =>
+            try
             {
-                var parent = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
-                var processes = Process.GetProcessesByName("AppController");
-                if (appHelper.AppVersion != appHelper.InstalledAppVersion)
+                var user = GetUser();
+                WriteException(user);
+                var appHelper = GetAppData(user).Result;
+                WriteException(appHelper.AppVersion);
+                WriteException(appHelper.InstalledAppVersion);
+                var t = Task.Run(async () =>
                 {
-                    await GetZip(parent, appHelper.AppVersion);
-                    if (processes != null && processes.Any())
+                    var parent = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
+                    WriteException(parent);
+                    var processes = Process.GetProcessesByName("AppController");
+                    if (appHelper.AppVersion != appHelper.InstalledAppVersion)
                     {
-                        foreach (var proc in processes)
+                        WriteException(appHelper.AppVersion);
+                        await GetZip(parent, appHelper.AppVersion);
+                        WriteException("zipDownloaded");
+                        if (processes != null && processes.Any())
                         {
-                            proc.Kill();
+                            foreach (var proc in processes)
+                            {
+                                proc.Kill();
+                            }
                         }
+                        if (Directory.Exists(parent + "\\AppController"))
+                        {
+                            Directory.Delete(parent + "\\AppController", true);
+                        }
+
+                        Directory.CreateDirectory(parent + "\\AppController");
+                        ZipFile.ExtractToDirectory(parent + $"\\{appHelper.AppVersion}.zip", parent + "\\AppController");
+
+                        File.Delete(parent + $"\\{appHelper.AppVersion}.zip");
                     }
-                    if (Directory.Exists(parent + "\\AppController"))
+                    await PostData(new UserDetail { AppVersion = appHelper.AppVersion, User = user });
+                    if (processes == null || !processes.Any())
                     {
-                        Directory.Delete(parent + "\\AppController", true);
+                        var path = Path.Combine(parent + "\\AppController", "AppController.exe");
+                        Process.Start(new ProcessStartInfo(path));
                     }
-
-                    Directory.CreateDirectory(parent + "\\AppController");
-                    ZipFile.ExtractToDirectory(parent + $"\\{appHelper.AppVersion}.zip", parent + "\\AppController");
-
-                    File.Delete(parent + $"\\{appHelper.AppVersion}.zip");
-                }
-                await PostData(new UserDetail { AppVersion = appHelper.AppVersion, User = user });
-                if (processes == null || !processes.Any())
-                {
-                    var path = Path.Combine(parent + "\\AppController", "AppController.exe");
-                    Process.Start(new ProcessStartInfo(path));
-                }
-            });
-            t.Wait();
+                });
+                t.Wait();
+            }
+            catch(Exception ex)
+            {
+                WriteException(ex.InnerException);
+            }
         }
 
         private static async Task PostData(UserDetail appInfo)
@@ -168,6 +181,16 @@ namespace AppDownloader
                 st = File.ReadAllText("Appdownloader.txt");
             }
             File.WriteAllText("Appdownloader.txt", st + Environment.NewLine + ex.Message);
+        }
+
+        private static void WriteException(string ex)
+        {
+            var st = string.Empty;
+            if (File.Exists("Appdownloader.txt"))
+            {
+                st = File.ReadAllText("Appdownloader.txt");
+            }
+            File.WriteAllText("Appdownloader.txt", st + Environment.NewLine + ex);
         }
     }
     public class Helper

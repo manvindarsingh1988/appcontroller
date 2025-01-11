@@ -1,3 +1,4 @@
+using AppInfoController;
 using AppInfoController.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -5,7 +6,7 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+builder.Services.AddSignalR();
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -36,9 +37,11 @@ app.UseStaticFiles(new StaticFileOptions
              "Cache-Control", $"public, max-age={cacheMaxAge}");
     }
 });
+
 app.UseEndpoints(config =>
 {
-    config.MapControllers();
     config.MapFallbackToController("Index", "Fallback");
+    config.MapControllers();
+    config.MapHub<RecordingHub>("/recordinghub");
 });
 app.Run();

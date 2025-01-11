@@ -1,12 +1,8 @@
-﻿
-using Microsoft.Win32.TaskScheduler;
-using System.Security.Principal;
+﻿using System.Security.Principal;
 using System;
 using System.Linq;
-using System.IO;
-using System.Net;
-using System.Diagnostics;
 using Microsoft.Win32;
+using Microsoft.Win32.TaskScheduler;
 
 namespace TaskScheduler
 {
