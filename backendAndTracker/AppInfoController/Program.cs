@@ -6,7 +6,9 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(e => {
+    e.MaximumReceiveMessageSize = 102400000;    
+});
 builder.Services.AddControllers();
 
 var app = builder.Build();

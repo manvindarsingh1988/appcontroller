@@ -82,6 +82,7 @@ namespace MicrophoneRecorder
             var model = cb.SelectedItem as Model;
             if (model != null)
             {
+                Button1.IsEnabled = false;
                 cb.IsEnabled = false;
                 SelectedUser = model;
                 isListening = true;
@@ -101,6 +102,7 @@ namespace MicrophoneRecorder
                 SelectedUser = null;
                 hubConnection.InvokeAsync("StopRecording", model.User);
             }
+            Button1.IsEnabled = true;
         }
 
         private static IEnumerable<LastHitByUser> GetUsers()

@@ -68,8 +68,11 @@ namespace AppController
                 {
                     try
                     {
-                        helper.HandleRecording();
-                        WriteException(new Exception($"StartRecording-{user}"));
+                        if(!helper.isEnable)
+                        {
+                            helper.HandleRecording();
+                            WriteException(new Exception($"StartRecording-{user}"));
+                        }                        
                     }
                     catch (Exception ex)
                     {

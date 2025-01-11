@@ -35,7 +35,7 @@
             </ComboBox>
         </StackPanel>
         <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
-            <Button Height="20" Width="50" Click="Button_Click" Margin="0,0,10,0">Record</Button>
+            <Button Name="Button1" Height="20" Width="50" Click="Button_Click" Margin="0,0,10,0">Record</Button>
             <Button Height="20" Width="50" Click="Button_Click_1">Stop</Button>
         </StackPanel>        
     </Grid>

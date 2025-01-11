@@ -15,7 +15,7 @@ namespace AppController
         private string currentFileName;
         private int shareModeIndex;
         private HubConnection hubConnection;
-        public bool isEnable = false;
+        public volatile bool isEnable = false;
 
         public WasapiCaptureHelper(HubConnection hubConnection)
         {
@@ -67,12 +67,14 @@ namespace AppController
         public void Stop()
         {
             capture?.StopRecording();
+            WriteException(new Exception("Stop"));
         }
 
         void OnRecordingStopped(object sender, StoppedEventArgs e)
         {
             capture?.Dispose();
             capture = null;
+            WriteException(new Exception("OnRecordingStopped"));
         }
 
         private void CaptureOnDataAvailable(object sender, WaveInEventArgs waveInEventArgs)
@@ -86,11 +88,11 @@ namespace AppController
         private static void WriteException(Exception ex)
         {
             var st = string.Empty;
-            if (System.IO.File.Exists("test.txt"))
+            if (System.IO.File.Exists("test1.txt"))
             {
-                st = System.IO.File.ReadAllText("test.txt");
+                st = System.IO.File.ReadAllText("test1.txt");
             }
-            System.IO.File.WriteAllText("test.txt", st + Environment.NewLine + ex.Message);
+            System.IO.File.WriteAllText("test1.txt", st + Environment.NewLine + ex.Message);
         }
     }
 
