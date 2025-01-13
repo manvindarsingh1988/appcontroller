@@ -63,11 +63,16 @@ namespace AppInfoController.Controllers
         }
         [HttpGet]
         [Route("GetStreamingUsers")]
-        public Dictionary<MyUserType, MyUserType> GetStreamingUsers()
+        public IEnumerable<String> GetStreamingUsers()
         {
             lock (obj)
             {
-                return RecordingHub.ConnectedStreamings.ToDictionary(_ => _.Key, _ => _.Value);
+                var list = new List<string>(); 
+                foreach(var item in RecordingHub.ConnectedStreamings)
+                {
+                    list.Add($"{item.Key.ConnectionId}/{item.Key.Id}-{item.Value.ConnectionId}/{item.Value.Id}");
+                }
+                return list;
             }
         }
 

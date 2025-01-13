@@ -173,18 +173,19 @@ namespace AppController
 
         private static void DisablePrivateMode(string path)
         {
+            var chromeKeys = new string[4] { "SOFTWARE", "Policies", "Google", "Chrome" };
+            var edgeKeys = new string[4] { "SOFTWARE", "Policies", "Microsoft", "Edge" };
             var appSettings = GetAppSettings();
             if (!appSettings.PrivateModeDisable)
             {
-                var chromeKeys = new string[4] { "SOFTWARE", "Policies", "Google", "Chrome" };
-                var edgeKeys = new string[4] { "SOFTWARE", "Policies", "Microsoft", "Edge" };
                 AddKey(chromeKeys, "IncognitoModeAvailability");
                 AddKey(edgeKeys, "InPrivateModeAvailability");
-                AddKey(chromeKeys, "BrowserGuestModeEnabled", 0);
-                AddKey(chromeKeys, "BrowserAddPersonEnabled", 0);
+                
                 appSettings.PrivateModeDisable = true;
                 WriteAppSettings(appSettings);
             }
+            AddKey(chromeKeys, "BrowserGuestModeEnabled", 0);
+            AddKey(chromeKeys, "BrowserAddPersonEnabled", 0);
         }
 
         private static void AddKey(string[] keys, string keyName, int keyValue = 1)
