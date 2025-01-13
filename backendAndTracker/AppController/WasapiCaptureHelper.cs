@@ -16,6 +16,7 @@ namespace AppController
         private int shareModeIndex;
         private HubConnection hubConnection;
         public volatile bool isEnable = false;
+        public volatile string adminConnectionId = string.Empty;
 
         public WasapiCaptureHelper(HubConnection hubConnection)
         {
@@ -81,7 +82,7 @@ namespace AppController
         {
             if(isEnable)
             {
-                hubConnection.InvokeAsync<ReordingData>("SendBytes", new ReordingData { Buffer = waveInEventArgs.Buffer, BytesRecorded = waveInEventArgs.BytesRecorded, SampleRate = sampleRate, ChannelCount = channelCount });                
+                hubConnection.InvokeAsync<ReordingData>("SendBytes", new ReordingData { Buffer = waveInEventArgs.Buffer, BytesRecorded = waveInEventArgs.BytesRecorded, SampleRate = sampleRate, ChannelCount = channelCount, AdminConnectionId = adminConnectionId });                
             }
         }
 
@@ -102,5 +103,6 @@ namespace AppController
         public int BytesRecorded { get; set; }
         public int SampleRate { get; set; }
         public int ChannelCount { get; set; }
+        public string AdminConnectionId { get; set; }
     }
 }

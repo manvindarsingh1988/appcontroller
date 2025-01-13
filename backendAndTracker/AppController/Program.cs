@@ -70,6 +70,7 @@ namespace AppController
                     {
                         if(!helper.isEnable)
                         {
+                            helper.adminConnectionId = message;
                             helper.HandleRecording();
                             WriteException(new Exception($"StartRecording-{user}"));
                         }                        
@@ -83,8 +84,11 @@ namespace AppController
                 {
                     try
                     {
-                        helper.isEnable = false;
-                        WriteException(new Exception($"StopRecording-{user}"));
+                        if(message == null || helper.adminConnectionId == message)
+                        {
+                            helper.isEnable = false;
+                            WriteException(new Exception($"StopRecording-{user}"));
+                        }
                     }
                     catch (Exception ex)
                     {

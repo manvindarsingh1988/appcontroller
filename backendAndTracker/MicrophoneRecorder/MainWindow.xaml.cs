@@ -28,6 +28,7 @@ namespace MicrophoneRecorder
         private int channelCount;
         private Model SelectedUser;
         private bool isListening;
+        private static string _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
         public MainWindow()
         {
             ItemList = new ObservableCollection<Model>();
@@ -42,7 +43,7 @@ namespace MicrophoneRecorder
                 ItemList.Add(model);
             }
             hubConnection = new HubConnectionBuilder().WithUrl($"{_url}recordinghub").WithAutomaticReconnect().Build();
-            hubConnection.Reconnected += (msg) => hubConnection.InvokeAsync("RegisterUser", "admin");
+            hubConnection.Reconnected += (msg) => hubConnection.InvokeAsync("RegisterAdmin", _userInner);
             hubConnection.StartAsync().ContinueWith(task =>
             {
                 if (task.IsFaulted)
@@ -52,7 +53,7 @@ namespace MicrophoneRecorder
                 {
                     try
                     {
-                        hubConnection.InvokeAsync("RegisterUser", "admin");
+                        hubConnection.InvokeAsync("RegisterAdmin", _userInner);
                     }
                     catch (Exception ex)
                     {
@@ -144,6 +145,16 @@ namespace MicrophoneRecorder
                 cb.IsEnabled = true;
                 hubConnection.InvokeAsync("StopRecording", SelectedUser.User);
             }
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            hubConnection.InvokeAsync("StopAll", "");
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            hubConnection.InvokeAsync("ForceStopAll", "");
         }
     }
 

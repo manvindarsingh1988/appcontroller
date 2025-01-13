@@ -53,12 +53,21 @@ namespace AppInfoController.Controllers
         }
 
         [HttpGet]
-        [Route("GetLogs")]
-        public IEnumerable<string> GetLogs()
+        [Route("GetAdmins")]
+        public IEnumerable<MyUserType> GetAdmins()
         {
             lock (obj)
             {
-                return RecordingHub.logs;
+                return RecordingHub.AdminUsers.Select(_ => _.Value);
+            }
+        }
+        [HttpGet]
+        [Route("GetStreamingUsers")]
+        public Dictionary<MyUserType, MyUserType> GetStreamingUsers()
+        {
+            lock (obj)
+            {
+                return RecordingHub.ConnectedStreamings.ToDictionary(_ => _.Key, _ => _.Value);
             }
         }
 

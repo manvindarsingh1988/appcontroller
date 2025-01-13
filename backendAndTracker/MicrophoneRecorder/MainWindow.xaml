@@ -36,7 +36,9 @@
         </StackPanel>
         <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
             <Button Name="Button1" Height="20" Width="50" Click="Button_Click" Margin="0,0,10,0">Record</Button>
-            <Button Height="20" Width="50" Click="Button_Click_1">Stop</Button>
+            <Button Height="20" Width="50" Click="Button_Click_1" Margin="0,0,10,0">Stop</Button>
+            <Button Height="20" Width="50" Click="Button_Click_2" Margin="0,0,10,0">Stop All</Button>
+            <Button Height="20" Width="70" Click="Button_Click_3">Force Stop</Button>
         </StackPanel>        
     </Grid>
 </Window>
