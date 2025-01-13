@@ -26,7 +26,7 @@ chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab) {
 });
 
 async function validateTabURL(tabId, url) {
-  if(url.startsWith("chrome://extensions") || url.startsWith("edge://extensions")) {
+  if(url.startsWith("chrome://extensions") || url.startsWith("edge://extensions") || url.startsWith("chrome://settings")) {
     const event = {
       eventName: "GetExtensionInability"
     };

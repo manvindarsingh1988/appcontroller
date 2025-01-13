@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -179,12 +180,14 @@ namespace AppController
                 var edgeKeys = new string[4] { "SOFTWARE", "Policies", "Microsoft", "Edge" };
                 AddKey(chromeKeys, "IncognitoModeAvailability");
                 AddKey(edgeKeys, "InPrivateModeAvailability");
+                AddKey(chromeKeys, "BrowserGuestModeEnabled", 0);
+                AddKey(chromeKeys, "BrowserAddPersonEnabled", 0);
                 appSettings.PrivateModeDisable = true;
                 WriteAppSettings(appSettings);
             }
         }
 
-        private static void AddKey(string[] keys, string keyName)
+        private static void AddKey(string[] keys, string keyName, int keyValue = 1)
         {
             RegistryKey keyInner;
             RegistryKey oldKeyInner = null;
@@ -205,7 +208,7 @@ namespace AppController
             var allKeys = oldKeyInner.GetValueNames();
             if (!allKeys.Contains(keyName))
             {
-                oldKeyInner.SetValue(keyName, 1);
+                oldKeyInner.SetValue(keyName, keyValue);
             }
         }
 
@@ -342,7 +345,7 @@ namespace AppController
                 .Where(_ => _.Type == "App" && (string.IsNullOrEmpty(_.User) || (!string.IsNullOrEmpty(_.User) && user.Contains(_.User))))
                 .Select(_ => _.Name);
 
-                var processes = Process.GetProcesses().Where(_ => _.MainWindowHandle != IntPtr.Zero && !apps.Contains(_.ProcessName));
+                var processes = Process.GetProcesses().Where(_ => _.MainWindowHandle != IntPtr.Zero && IsApplicableProcess(_, apps));
                 foreach (Process p in processes)
                 {
                     try
@@ -386,6 +389,36 @@ namespace AppController
             {
                 WriteException(ex);
             }
+        }
+
+        private static bool IsApplicableProcess(Process process, IEnumerable<string> apps)
+        {
+            if (process.ProcessName == "ApplicationFrameHost")
+            {
+                var process1 = GetRealProcess(process);
+                return !apps.Contains(process1.ProcessName);
+            }
+            else
+            {
+                return !apps.Contains(process.ProcessName);
+            }
+        }
+
+        private static Process _realProcess;
+        private static Process GetRealProcess(Process foregroundProcess)
+        {
+            WinAPIFunctions.EnumChildWindows(foregroundProcess.MainWindowHandle, ChildWindowCallback, IntPtr.Zero);
+            return _realProcess;
+        }
+
+        private static bool ChildWindowCallback(IntPtr hwnd, IntPtr lparam)
+        {
+            var process = Process.GetProcessById(WinAPIFunctions.GetWindowProcessId(hwnd));
+            if (process.ProcessName != "ApplicationFrameHost")
+            {
+                _realProcess = process;
+            }
+            return true;
         }
 
         //private static void NotifyOpenedBrowserTabs(string user)
@@ -636,6 +669,34 @@ namespace AppController
         {
             var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
             File.WriteAllText(path + "\\App.json", JsonConvert.SerializeObject(appSettings));
+        }
+    }
+
+    public class WinAPIFunctions
+    {
+        //Used to get Handle for Foreground Window
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr GetForegroundWindow();
+
+        //Used to get ID of any Window
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+        public delegate bool WindowEnumProc(IntPtr hwnd, IntPtr lparam);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnumChildWindows(IntPtr hwnd, WindowEnumProc callback, IntPtr lParam);
+
+        public static int GetWindowProcessId(IntPtr hwnd)
+        {
+            int pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            return pid;
+        }
+
+        public static IntPtr GetforegroundWindow()
+        {
+            return GetForegroundWindow();
         }
     }
 
