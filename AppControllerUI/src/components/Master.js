@@ -9,6 +9,7 @@ const Master = () => {
   const [validity, setValidity] = useState(0);
   const [apps, setApps] = useState([]);
   const [appVersion, setAppVersion] = useState("");
+  const [downloaderVersion, setDownloaderVersion] = useState("");
   const [formValues, setFormValues] = useState({
     name: "",
     type: "URL",
@@ -23,6 +24,7 @@ const Master = () => {
         setApps(res.data.allowedAppsAndUrls);
         setValidity(res.data.userValidity);
         setAppVersion(res.data.appVersion);
+        setDownloaderVersion(res.data.downloaderVersion);
       })
       .catch((err) => console.log(err));
   }, [updatedOn]);
@@ -159,6 +161,12 @@ const Master = () => {
           <label className="form-label">
             Latest Application Version:
             <b>{appVersion}</b>
+          </label>
+        </div>
+        <div className="border border-1 radius-2 m-2 p-2">
+          <label className="form-label">
+            Latest Downloader Version:
+            <b>{downloaderVersion}</b>
           </label>
         </div>
         <p className="ms-2 mt-2 mb-0">

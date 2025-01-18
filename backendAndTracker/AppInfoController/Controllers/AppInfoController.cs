@@ -37,7 +37,8 @@ namespace AppInfoController.Controllers
                     bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
                     var userValidity = int.Parse(context.AppSettings.First(x => x.Name == "UserValidity")?.Value ?? "10");
                     var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
-                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, UserValidity =  userValidity, AppVersion = appVersion };
+                    var downloaderVersion = context.AppSettings.FirstOrDefault(x => x.Name == "DownloaderVersion")?.Value!;
+                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, UserValidity =  userValidity, AppVersion = appVersion, DownloaderVersion = downloaderVersion };
                 }
             }
         }
@@ -106,8 +107,9 @@ namespace AppInfoController.Controllers
                     var appInfos = context.AllowedAppsAndUrls.Where(_ => string.IsNullOrEmpty(_.User) || _.User == user).ToList();
                     bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
                     var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
+                    var downloaderVersion = context.AppSettings.First(x => x.Name == "DownloaderVersion")?.Value!;
                     
-                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, AppVersion = appVersion, InstalledAppVersion = userDetail?.AppVersion! };
+                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, AppVersion = appVersion, InstalledAppVersion = userDetail?.AppVersion!, DownloaderVersion = downloaderVersion, InstalledDownloaderVersion = userDetail?.DownloaderVersion! };
                 }
             }
         }
@@ -225,6 +227,28 @@ namespace AppInfoController.Controllers
         }
 
         [HttpPost]
+        [Route("UpdateLatestDownloaderVersion")]
+        public void UpdateLatestDownloaderVersion(LatestAppVersion latestAppVersion)
+        {
+            lock (obj)
+            {
+                using (var db = new AppControllerContext())
+                {
+                    var downloaderVersion = db.AppSettings.FirstOrDefault(x => x.Name == "DownloaderVersion");
+                    if(downloaderVersion != null)
+                    {
+                        downloaderVersion.Value = latestAppVersion.AppVersion;
+                    }
+                    else
+                    {
+                        db.AppSettings.Add(new AppSetting { Name = "DownloaderVersion", Value = latestAppVersion.AppVersion });
+                    }
+                    db.SaveChanges();
+                }
+            }
+        }
+
+        [HttpPost]
         [Route("UpdateUserDetail")]
         public void UpdateUserDetail(LastHitByUser user)
         {
@@ -263,6 +287,7 @@ namespace AppInfoController.Controllers
                     {
                         userDetail.Date = time;
                         userDetail.AppVersion = user.AppVersion;
+                        userDetail.DownloaderVersion = user.DownloaderVersion;
                     }
                     else
                     {
@@ -270,7 +295,8 @@ namespace AppInfoController.Controllers
                         {
                             User = user.User,
                             Date = time,
-                            AppVersion = user.AppVersion
+                            AppVersion = user.AppVersion,
+                            DownloaderVersion = user.DownloaderVersion
                         };
                         db.LastHitByUsers.Add(lastHit);
                     }
@@ -445,6 +471,18 @@ namespace AppInfoController.Controllers
                 {
                 }
             }
+        }
+
+        [HttpGet]
+        [Route("GetDownloaderZip")]
+        public byte[] GetDownloaderZip()
+        {
+            byte[] result;
+            using (MemoryStream tmpMemory = new MemoryStream(System.IO.File.ReadAllBytes("AppZip//Downloader.zip")))
+            {
+                result = tmpMemory.ToArray();
+            };
+            return result;
         }
 
         [HttpGet]

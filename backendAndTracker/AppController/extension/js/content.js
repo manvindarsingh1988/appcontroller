@@ -1,4 +1,4 @@
-const BASE_URL = "https://www.appcontroller.in";
+const BASE_URL = "https://ac.saralesuvidha.com";
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {   
   var apiData = await getValidUrl(message.data.User)

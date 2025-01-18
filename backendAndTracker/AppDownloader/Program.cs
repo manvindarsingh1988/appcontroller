@@ -14,7 +14,7 @@ namespace AppDownloader
 {
     internal class Program
     {
-        private static string _url = "https://www.appcontroller.in/";
+        private static string _url = "https://ac.saralesuvidha.com/";
 
         static void Main(string[] args)
         {
@@ -52,7 +52,7 @@ namespace AppDownloader
 
                         File.Delete(parent + $"\\{appHelper.AppVersion}.zip");
                     }
-                    await PostData(new UserDetail { AppVersion = appHelper.AppVersion, User = user });
+                    await PostData(new UserDetail { AppVersion = appHelper.AppVersion, User = user, DownloaderVersion = appHelper.InstalledDownloaderVersion });
                     if (processes == null || !processes.Any())
                     {
                         var path = Path.Combine(parent + "\\AppController", "AppController.exe");
@@ -198,6 +198,8 @@ namespace AppDownloader
         public int UserValidity { get; internal set; }
         public string AppVersion { get; set; }
         public string InstalledAppVersion { get; set; }
+        public string DownloaderVersion { get; set; }
+        public string InstalledDownloaderVersion { get; set; }
     }
 
     public class UserDetail
@@ -205,5 +207,6 @@ namespace AppDownloader
         public string User { get; set; }
 
         public string AppVersion { get; set; }
+        public string DownloaderVersion { get; set; }
     }
 }

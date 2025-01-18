@@ -25,5 +25,6 @@ namespace AppInfoController.Models
 
         public string? AppVersion { get; set; }
         public string? Summary { get; set; }
+        public string? DownloaderVersion { get; set; }
     }
 }

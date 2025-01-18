@@ -9,5 +9,7 @@ namespace AppInfoController
         public int UserValidity { get; internal set; }
         public string AppVersion { get; set; }
         public string InstalledAppVersion { get; set; }
+        public string DownloaderVersion { get; set; }
+        public string InstalledDownloaderVersion { get; set; }
     }
 }

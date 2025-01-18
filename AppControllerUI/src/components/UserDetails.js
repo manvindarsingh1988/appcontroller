@@ -81,6 +81,7 @@ const UserDetails = () => {
                 Allowed User Id(s)
               </th>
               <th>App Version</th>
+              <th>Downloader Version</th>
               <th>Summary</th>
               <th>Actions</th>
             </tr>
@@ -104,6 +105,7 @@ const UserDetails = () => {
                   <td>{item.address} </td>
                   <td className="text-wrap"  style={{ maxWidth: "300px" }}>{item.allowedUserId}</td>
                   <td>{item.appVersion} </td>
+                  <td>{item.downloaderVersion} </td>
                   <td>{item.summary} </td>
                   <td>
                     <div className="input-group mx-1">

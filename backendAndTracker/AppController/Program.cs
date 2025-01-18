@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Win32;
+using NAudio.CoreAudioApi;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Device.Location;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -28,7 +31,7 @@ namespace AppController
         /// 
         private static List<int> _processIds = new List<int>();
         //private static Dictionary<long, List<Tuple<string, string>>> _browserProcessIds = new Dictionary<long, List<Tuple<string, string>>>();
-        private static string _url = "https://www.appcontroller.in/";
+        private static string _url = "https://ac.saralesuvidha.com/";
         private static DateTime _updatedOn = DateTime.Now;
         private static string _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
         private static Dictionary<Guid, string> _failed = new Dictionary<Guid, string>();
@@ -42,65 +45,8 @@ namespace AppController
             // Start the watcher.  
             watcher.Start();
             var user = GetUser();
-            try
-            {                
-                var connection = new HubConnectionBuilder().WithUrl($"{_url}recordinghub").WithAutomaticReconnect().Build();
-                connection.Reconnected += (msg) => connection.InvokeAsync("RegisterUser", user);
-                var helper = new WasapiCaptureHelper(connection);
-                connection.StartAsync().ContinueWith(task =>
-                {
-                    if (task.IsFaulted)
-                    {
-                    }
-                    else
-                    {
-                        try
-                        {
-                            connection.InvokeAsync("RegisterUser", user);
-                            WriteException(new Exception($"RegisterUser-{user}"));
-                        }
-                        catch (Exception ex)
-                        {
-                            WriteException(ex);
-                        }
-                    }
-                }).Wait();
-                connection.On<string>("StartRecording", (message) =>
-                {
-                    try
-                    {
-                        if(!helper.isEnable)
-                        {
-                            helper.adminConnectionId = message;
-                            helper.HandleRecording();
-                            WriteException(new Exception($"StartRecording-{user}"));
-                        }                        
-                    }
-                    catch (Exception ex)
-                    {
-                        WriteException(ex);
-                    }                    
-                });
-                connection.On<string>("StopRecording", (message) =>
-                {
-                    try
-                    {
-                        if(message == null || helper.adminConnectionId == message)
-                        {
-                            helper.isEnable = false;
-                            WriteException(new Exception($"StopRecording-{user}"));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        WriteException(ex);
-                    }                    
-                });
-            }
-            catch(Exception ex)
-            {
-                WriteException(ex);
-            }
+            var connection = new HubConnectionBuilder().WithUrl($"{_url}recordinghub").WithAutomaticReconnect().Build();
+            ConnectSignalRServer(user, connection);
             var path = Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName;
             var parentPath = Directory.GetParent(path).FullName;
 
@@ -137,6 +83,26 @@ namespace AppController
 
                     NotifyAndKillOpenedProcesses(appHelper, user);
 
+                    if (appHelper.DownloaderVersion != appHelper.InstalledDownloaderVersion)
+                    {
+                        if (File.Exists(parentPath + "\\AppDownloader.exe"))
+                        {
+                            File.Delete(parentPath + "\\AppDownloader.exe");
+                        }
+                        if (File.Exists(parentPath + "\\AppDownloader.pdb"))
+                        {
+                            File.Delete(parentPath + "\\AppDownloader.pdb");
+                        }
+                        var t = Task.Run(async () =>
+                        {
+                            await GetZip(parentPath, appHelper.DownloaderVersion);
+                            ZipFile.ExtractToDirectory(parentPath + $"\\Downloader_{appHelper.DownloaderVersion}.zip", parentPath);
+                            File.Delete(parentPath + $"\\Downloader_{appHelper.DownloaderVersion}.zip");
+                            await PostData(new UserDetail { AppVersion = appHelper.InstalledAppVersion, User = user, DownloaderVersion = appHelper.DownloaderVersion });
+                        });
+                        t.Wait();
+                        
+                    }
                     //NotifyOpenedBrowserTabs(user);
                     if (appHelper.AppVersion != appHelper.InstalledAppVersion)
                     {
@@ -150,7 +116,147 @@ namespace AppController
             catch (Exception ex)
             {
                 WriteException(ex);
+                WriteException(new Exception("1"));
             }
+        }
+
+        private static async Task PostData(UserDetail appInfo)
+        {
+            try
+            {
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+                };
+                var client = new HttpClient(handler);
+
+                // Set the base address to simplify maintenance & requests
+                client.BaseAddress = new Uri(_url);
+
+                // Serialize class into JSON
+                var payload = JsonConvert.SerializeObject(appInfo);
+
+                // Wrap our JSON inside a StringContent object
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                // Post to the endpoint
+                var response = await client.PostAsync("/appinfo/UpdateAppVersion", content);
+            }
+            catch (Exception ex)
+            {
+                WriteException(ex);
+            }
+        }
+
+        private async static Task GetZip(string path, string appVersion)
+        {
+            try
+            {
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+                };
+                var client = new HttpClient(handler);
+
+                // Set the base address to simplify maintenance & requests
+                client.BaseAddress = new Uri(_url);
+
+                // Post to the endpoint
+
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
+                //GET Method
+
+                var response = await client.GetAsync($"/appinfo/GetDownloaderZip");
+                if (response.IsSuccessStatusCode)
+                {
+                    var rs = await response.Content.ReadAsAsync<byte[]>();
+                    using (var writer = new BinaryWriter(File.OpenWrite(path + $"\\Downloader_{appVersion}.zip")))
+                    {
+                        writer.Write(rs);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteException(ex);
+            }
+        }
+
+        private static void ConnectSignalRServer(string user, HubConnection connection)
+        {
+            try
+            {
+                connection.Reconnected += (msg) => connection.InvokeAsync("RegisterUser", user);
+                var helper = new WasapiCaptureHelper(connection);
+                connection.StartAsync().ContinueWith(task =>
+                {
+                    if (task.IsFaulted)
+                    {
+                    }
+                    else
+                    {
+                        try
+                        {
+                            connection.InvokeAsync("RegisterUser", user);
+                            WriteException(new Exception($"RegisterUser-{user}"));
+                            if (connection.State == HubConnectionState.Connected)
+                            {
+                                connection.Closed += (ex) => Connection_Closed(ex, connection);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteException(ex);
+                            WriteException(new Exception("2"));
+                        }
+                    }
+                }).Wait();
+                connection.On<string>("StartRecording", (message) =>
+                {
+                    try
+                    {
+                        if (!helper.isEnable)
+                        {
+                            helper.adminConnectionId = message;
+                            helper.HandleRecording();
+                            WriteException(new Exception($"StartRecording-{user}"));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteException(ex);
+                        WriteException(new Exception("3"));
+                    }
+                });
+                connection.On<string>("StopRecording", (message) =>
+                {
+                    try
+                    {
+                        if (message == null || helper.adminConnectionId == message)
+                        {
+                            helper.isEnable = false;
+                            WriteException(new Exception($"StopRecording-{user}"));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteException(ex);
+                        WriteException(new Exception("4"));
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                WriteException(ex);
+                WriteException(new Exception("5"));
+            }
+        }
+
+        private static async Task Connection_Closed(Exception arg, HubConnection connection)
+        {
+            ConnectSignalRServer(_userInner, connection);
+            await Task.CompletedTask;
         }
 
         private static void RecreateAppSettingFile(string path, string parentPath)
@@ -290,6 +396,7 @@ namespace AppController
             catch (Exception ex) 
             {
                 WriteException(ex);
+                WriteException(new Exception("6"));
             }
             return string.Empty;
         }
@@ -335,6 +442,7 @@ namespace AppController
             catch(Exception ex)
             {
                 WriteException(ex);
+                WriteException(new Exception("7"));
             }
         }
 
@@ -383,12 +491,14 @@ namespace AppController
                     catch (Exception ex)
                     {
                         WriteException(ex);
+                        WriteException(new Exception("8"));
                     }
                 }
             }
             catch (Exception ex)
             {
                 WriteException(ex);
+                WriteException(new Exception("9"));
             }
         }
 
@@ -396,8 +506,16 @@ namespace AppController
         {
             if (process.ProcessName == "ApplicationFrameHost")
             {
-                var process1 = GetRealProcess(process);
-                return !apps.Contains(process1.ProcessName);
+                try
+                {
+                    var process1 = GetRealProcess(process);
+                    return !apps.Contains(process1.ProcessName);
+                }
+                catch(Exception ex)
+                {
+                    return false;
+                }
+
             }
             else
             {
@@ -484,6 +602,7 @@ namespace AppController
             catch (Exception ex)
             {
                 WriteException(ex);
+                WriteException(new Exception("10"));
             }
         }
 
@@ -523,6 +642,7 @@ namespace AppController
                         catch (Exception ex)
                         {
                             WriteException(ex);
+                            WriteException(new Exception("11"));
                         }
                     }
                     _processIds.Clear();
@@ -531,6 +651,7 @@ namespace AppController
             catch (Exception ex)
             {
                 WriteException(ex);
+                WriteException(new Exception("12"));
             }
             
         }
@@ -572,7 +693,8 @@ namespace AppController
             catch(Exception ex)
             {
                 WriteException(ex);
-                if(!_failed.ContainsKey(id))
+                WriteException(new Exception("13"));
+                if (!_failed.ContainsKey(id))
                 {
                     _failed.Add(id, payload);
                 }
@@ -615,6 +737,7 @@ namespace AppController
                 catch( Exception ex)
                 {
                     WriteException(ex);
+                    WriteException(new Exception("14"));
                 }
             }
             return helper;
@@ -708,6 +831,8 @@ namespace AppController
         public int UserValidity { get; internal set; }
         public string AppVersion { get; set; }
         public string InstalledAppVersion { get; set; }
+        public string DownloaderVersion { get; set; }
+        public string InstalledDownloaderVersion { get; set; }
     }
 
     public partial class AllowedAppsAndUrl
@@ -756,6 +881,8 @@ namespace AppController
     public class UserDetail
     {
         public string User { get; set; }
+        public string AppVersion { get; set; }
+        public string DownloaderVersion { get; set; }
     }
 
     public class LatLongInfo

@@ -20,7 +20,7 @@ namespace MicrophoneRecorder
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static string _url = "https://www.appcontroller.in/";
+        private static string _url = "https://ac.saralesuvidha.com/";
         private BufferedWaveProvider bwp;
         WaveOut wo;
         HubConnection hubConnection;
