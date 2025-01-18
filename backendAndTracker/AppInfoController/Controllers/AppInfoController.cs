@@ -1,6 +1,7 @@
 using AppInfoController.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Text;
 
 namespace AppInfoController.Controllers
@@ -275,7 +276,39 @@ namespace AppInfoController.Controllers
                         db.LastHitByUsers.Add(lastHit);
                     }
                     db.SaveChanges();
+                    var t = Task.Run(async () =>
+                    {
+                        await PostData(user);
+                    });
+                    t.Wait();
                 }
+            }
+        }
+
+        private static async Task PostData(LastHitByUser appInfo)
+        {
+            try
+            {
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+                };
+                var client = new HttpClient(handler);
+
+                // Set the base address to simplify maintenance & requests
+                client.BaseAddress = new Uri("https://ac.saralesuvidha.com/");
+
+                // Serialize class into JSON
+                var payload = JsonConvert.SerializeObject(appInfo);
+
+                // Wrap our JSON inside a StringContent object
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                // Post to the endpoint
+                var response = await client.PostAsync("/appinfo/UpdateAppVersion", content);
+            }
+            catch (Exception ex)
+            {
             }
         }
 
