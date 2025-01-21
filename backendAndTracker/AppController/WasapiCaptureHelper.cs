@@ -16,11 +16,10 @@ namespace AppController
         private int shareModeIndex;
         private HubConnection hubConnection;
         public volatile bool isEnable = false;
-        public volatile string adminConnectionId = string.Empty;
+        public volatile string connectionURL = string.Empty;
 
-        public WasapiCaptureHelper(HubConnection hubConnection)
+        public WasapiCaptureHelper()
         {
-            this.hubConnection = hubConnection;
             var enumerator = new MMDeviceEnumerator();
             selectedDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
             GetDefaultRecordingFormat(selectedDevice);
@@ -37,6 +36,25 @@ namespace AppController
 
         public void HandleRecording()
         {
+            hubConnection = new HubConnectionBuilder().WithUrl(connectionURL).WithAutomaticReconnect().Build();
+            hubConnection.StartAsync().ContinueWith(task =>
+            {
+                if (task.IsFaulted)
+                {
+                }
+                else
+                {
+                    try
+                    {
+                        WriteException(new Exception("hub started."));
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteException(ex);
+                        WriteException(new Exception("2"));
+                    }
+                }
+            }).Wait();
             Thread th = new Thread(() =>
             {
                 isEnable = true;
@@ -69,6 +87,9 @@ namespace AppController
         {
             capture?.StopRecording();
             WriteException(new Exception("Stop"));
+             
+            hubConnection.DisposeAsync();
+            hubConnection = null;
         }
 
         void OnRecordingStopped(object sender, StoppedEventArgs e)
@@ -82,7 +103,7 @@ namespace AppController
         {
             if(isEnable)
             {
-                hubConnection.InvokeAsync<ReordingData>("SendBytes", new ReordingData { Buffer = waveInEventArgs.Buffer, BytesRecorded = waveInEventArgs.BytesRecorded, SampleRate = sampleRate, ChannelCount = channelCount, AdminConnectionId = adminConnectionId });                
+                hubConnection.InvokeAsync<ReordingData>("SendBytes", new ReordingData { Buffer = waveInEventArgs.Buffer, BytesRecorded = waveInEventArgs.BytesRecorded, SampleRate = sampleRate, ChannelCount = channelCount });                
             }
         }
 
@@ -103,6 +124,5 @@ namespace AppController
         public int BytesRecorded { get; set; }
         public int SampleRate { get; set; }
         public int ChannelCount { get; set; }
-        public string AdminConnectionId { get; set; }
     }
 }

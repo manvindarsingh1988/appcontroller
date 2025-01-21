@@ -29,3 +29,5 @@ AppControllerUI/package-lock.json
 /backendAndTracker/MicrophoneRecorder/bin/*
 /backendAndTracker/MicrophoneRecorder/obj/*
 
+/backendAndTracker/MicrophoneServerLite/bin/*
+/backendAndTracker/MicrophoneServerLite/obj/*

@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppDownloader", "AppDownloa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicrophoneRecorder", "MicrophoneRecorder\MicrophoneRecorder.csproj", "{0BE65E1F-525B-46A4-9837-2F2EAF021E77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicrophoneServerLite", "MicrophoneServerLite\MicrophoneServerLite.csproj", "{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,14 @@ Global
 		{0BE65E1F-525B-46A4-9837-2F2EAF021E77}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0BE65E1F-525B-46A4-9837-2F2EAF021E77}.Release|x86.ActiveCfg = Release|Any CPU
 		{0BE65E1F-525B-46A4-9837-2F2EAF021E77}.Release|x86.Build.0 = Release|Any CPU
+		{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}.Debug|x86.Build.0 = Debug|Any CPU
+		{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}.Release|x86.ActiveCfg = Release|Any CPU
+		{963C4911-2F79-417F-8E3E-0DC8A1ED8ADC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

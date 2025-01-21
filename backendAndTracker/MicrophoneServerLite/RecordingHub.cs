@@ -8,19 +8,7 @@ namespace AppInfoController
         public static ConcurrentDictionary<string, MyUserType> MyUsers = new ConcurrentDictionary<string, MyUserType>();
         public static ConcurrentDictionary<string, MyUserType> AdminUsers = new ConcurrentDictionary<string, MyUserType>();
         public static ConcurrentDictionary<MyUserType, MyUserType> ConnectedStreamings = new ConcurrentDictionary<MyUserType, MyUserType>();
-        public static ConcurrentBag<string> availableURLs = new ConcurrentBag<string>();
-        public static ConcurrentDictionary<MyUserType, string> usedURLs = new ConcurrentDictionary<MyUserType, string>();
 
-        public RecordingHub()
-        {
-            if(!availableURLs.Any() && !usedURLs.Any())
-            {
-                availableURLs.Add("https://friendly-mendeleev.180-179-213-167.plesk.page/recordinghub");
-                availableURLs.Add("https://cool-albattani.180-179-213-167.plesk.page/recordinghub");
-                availableURLs.Add("https://www.appcontroller.in/recordinghub");
-                //availableURLs.Add("http://localhost:5122/recordinghub");
-            }
-        }
         //public override Task OnConnectedAsync()
         //{
         //    MyUsers.TryAdd(Context.ConnectionId, new MyUserType() { ConnectionId = Context.ConnectionId });
@@ -87,20 +75,17 @@ namespace AppInfoController
             _ = MyUsers.TryGetValue(id, out MyUserType user);
             if(user != null)
             {
-                if (availableURLs.Any())
+                var admin = AdminUsers.FirstOrDefault(_ => _.Value.ConnectionId == Context.ConnectionId);
+                if(ConnectedStreamings.Any(_ => _.Value.ConnectionId == user.ConnectionId))
                 {
-                    availableURLs.TryTake(out var url);
-                    
-                    var admin = AdminUsers.FirstOrDefault(_ => _.Value.ConnectionId == Context.ConnectionId);
-                    usedURLs.TryAdd(admin.Value, url);
-                    if (ConnectedStreamings.Any(_ => _.Value.ConnectionId == user.ConnectionId))
-                    {
-                        return;
-                    }
-                    ConnectedStreamings.TryAdd(admin.Value, user);
-                    await Clients.Client(Context.ConnectionId).SendAsync("GetURL", url);
-                    await Clients.Client(user.ConnectionId).SendAsync("StartRecording", url);
+                    return;
                 }
+                //if (ConnectedStreamings.Any(_ => _.Key.ConnectionId == admin.Value.ConnectionId))
+                //{
+                //    return;
+                //}
+                ConnectedStreamings.TryAdd(admin.Value, user);
+                await Clients.Client(user.ConnectionId).SendAsync("StartRecording", Context.ConnectionId);
             }
         }
 
@@ -117,12 +102,7 @@ namespace AppInfoController
                 var admin = AdminUsers.FirstOrDefault(_ => _.Value.ConnectionId == Context.ConnectionId);
                 MyUserType garbage;
                 ConnectedStreamings.TryRemove(admin.Value, out garbage);
-                if(usedURLs.TryRemove(admin.Value, out string url))
-                {
-                    availableURLs.Add(url);
-                }
-
-                await Clients.Client(user.ConnectionId).SendAsync("StopRecording", null);
+                await Clients.Client(user.ConnectionId).SendAsync("StopRecording", Context.ConnectionId);
             }
         }
 

@@ -60,20 +60,41 @@ namespace MicrophoneRecorder
                     }
                 }
             }).Wait();
-            hubConnection.On<ReordingData>("SendBytes", (message) =>
+            hubConnection.On<string>("GetURL", (message1) =>
             {
-                if(isListening)
+                var connection = new HubConnectionBuilder().WithUrl(message1).WithAutomaticReconnect().Build();
+                connection.StartAsync().ContinueWith(task =>
                 {
-                    if (wo == null)
+                    if (task.IsFaulted)
                     {
-                        wo = new WaveOut();
-                        bwp = new BufferedWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(message.SampleRate, message.ChannelCount));
-                        bwp.DiscardOnBufferOverflow = true;
-                        wo.Init(bwp);
-                        wo.Play();
                     }
-                    bwp.AddSamples(message.Buffer, 0, message.BytesRecorded);
-                }                
+                    else
+                    {
+                        try
+                        {
+                            
+                        }
+                        catch (Exception ex)
+                        {
+                            
+                        }
+                    }
+                }).Wait();
+                connection.On<ReordingData>("SendBytes", (message) =>
+                {
+                    if (isListening)
+                    {
+                        if (wo == null)
+                        {
+                            wo = new WaveOut();
+                            bwp = new BufferedWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(message.SampleRate, message.ChannelCount));
+                            bwp.DiscardOnBufferOverflow = true;
+                            wo.Init(bwp);
+                            wo.Play();
+                        }
+                        bwp.AddSamples(message.Buffer, 0, message.BytesRecorded);
+                    }
+                });
             });
         }
 

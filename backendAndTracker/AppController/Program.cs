@@ -188,7 +188,7 @@ namespace AppController
             try
             {
                 connection.Reconnected += (msg) => connection.InvokeAsync("RegisterUser", user);
-                var helper = new WasapiCaptureHelper(connection);
+                var helper = new WasapiCaptureHelper();
                 connection.StartAsync().ContinueWith(task =>
                 {
                     if (task.IsFaulted)
@@ -218,7 +218,7 @@ namespace AppController
                     {
                         if (!helper.isEnable)
                         {
-                            helper.adminConnectionId = message;
+                            helper.connectionURL = message;
                             helper.HandleRecording();
                             WriteException(new Exception($"StartRecording-{user}"));
                         }
@@ -233,11 +233,8 @@ namespace AppController
                 {
                     try
                     {
-                        if (message == null || helper.adminConnectionId == message)
-                        {
-                            helper.isEnable = false;
-                            WriteException(new Exception($"StopRecording-{user}"));
-                        }
+                        helper.isEnable = false;
+                        WriteException(new Exception($"StopRecording-{user}"));
                     }
                     catch (Exception ex)
                     {
