@@ -1,6 +1,6 @@
 using AppInfoController.Models;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Text;
 
 namespace AppInfoController.Controllers
@@ -14,13 +14,10 @@ namespace AppInfoController.Controllers
         [HttpGet]
         public IEnumerable<AppInfo> Get()
         {
-            lock (obj)
+            using (var context = new AppControllerContext())
             {
-                using (var context = new AppControllerContext())
-                {
-                    var appInfos = context.AppInfos.ToList();
-                    return appInfos;
-                }
+                var appInfos = context.AppInfos.ToList();
+                return appInfos;
             }
         }
 
@@ -28,18 +25,15 @@ namespace AppInfoController.Controllers
         [Route("GetApplicationSettings")]
         public Helper GetApplicationSettings()
         {
-            
-            lock (obj)
+
+            using (var context = new AppControllerContext())
             {
-                using (var context = new AppControllerContext())
-                {
-                    var appInfos = context.AllowedAppsAndUrls.ToList();
-                    bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
-                    var userValidity = int.Parse(context.AppSettings.First(x => x.Name == "UserValidity")?.Value ?? "10");
-                    var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
-                    var downloaderVersion = context.AppSettings.FirstOrDefault(x => x.Name == "DownloaderVersion")?.Value!;
-                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, UserValidity =  userValidity, AppVersion = appVersion, DownloaderVersion = downloaderVersion };
-                }
+                var appInfos = context.AllowedAppsAndUrls.ToList();
+                bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
+                var userValidity = int.Parse(context.AppSettings.First(x => x.Name == "UserValidity")?.Value ?? "10");
+                var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
+                var downloaderVersion = context.AppSettings.FirstOrDefault(x => x.Name == "DownloaderVersion")?.Value!;
+                return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, UserValidity = userValidity, AppVersion = appVersion, DownloaderVersion = downloaderVersion };
             }
         }
 
@@ -47,70 +41,58 @@ namespace AppInfoController.Controllers
         [Route("GetConnectedUsers")]
         public IEnumerable<MyUserType> GetConnectedUsers()
         {
-            lock (obj)
-            {
-                return RecordingHub.MyUsers.Select(_ => _.Value);
-            }
+            return RecordingHub.MyUsers.Select(_ => _.Value);
         }
 
         [HttpGet]
         [Route("GetAdmins")]
         public IEnumerable<MyUserType> GetAdmins()
         {
-            lock (obj)
-            {
-                return RecordingHub.AdminUsers.Select(_ => _.Value);
-            }
+            return RecordingHub.AdminUsers.Select(_ => _.Value);
         }
         [HttpGet]
         [Route("GetStreamingUsers")]
         public IEnumerable<String> GetStreamingUsers()
         {
-            lock (obj)
+            var list = new List<string>();
+            foreach (var item in RecordingHub.ConnectedStreamings)
             {
-                var list = new List<string>(); 
-                foreach(var item in RecordingHub.ConnectedStreamings)
-                {
-                    list.Add($"{item.Key.ConnectionId}/{item.Key.Id}-{item.Value.ConnectionId}/{item.Value.Id}");
-                }
-                return list;
+                list.Add($"{item.Key.ConnectionId}/{item.Key.Id}-{item.Value.ConnectionId}/{item.Value.Id}");
             }
+            return list;
         }
 
         [HttpGet]
         [Route("GetApplicationSettingsByUser")]
         public Helper GetApplicationSettingsByUser(string user)
         {
-            lock (obj)
+            using (var context = new AppControllerContext())
             {
-                using (var context = new AppControllerContext())
+                var userDetail = context.LastHitByUsers.FirstOrDefault(x => x.User == user);
+                DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
+                TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
+                DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
+                var time = iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
+                if (userDetail != null)
                 {
-                    var userDetail = context.LastHitByUsers.FirstOrDefault(x => x.User == user);
-                    DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
-                    TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
-                    DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
-                    var time= iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
-                    if (userDetail != null)
-                    {
-                        userDetail.Date = time;
-                    }
-                    else
-                    {
-                        var lastHit = new LastHitByUser
-                        {
-                            User = user,
-                            Date = time
-                        };
-                        context.LastHitByUsers.Add(lastHit);
-                    }
-                    context.SaveChanges();
-                    var appInfos = context.AllowedAppsAndUrls.Where(_ => string.IsNullOrEmpty(_.User) || _.User == user).ToList();
-                    bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
-                    var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
-                    var downloaderVersion = context.AppSettings.First(x => x.Name == "DownloaderVersion")?.Value!;
-                    
-                    return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, AppVersion = appVersion, InstalledAppVersion = userDetail?.AppVersion!, DownloaderVersion = downloaderVersion, InstalledDownloaderVersion = userDetail?.DownloaderVersion! };
+                    userDetail.Date = time;
                 }
+                else
+                {
+                    var lastHit = new LastHitByUser
+                    {
+                        User = user,
+                        Date = time
+                    };
+                    context.LastHitByUsers.Add(lastHit);
+                }
+                context.SaveChanges();
+                var appInfos = context.AllowedAppsAndUrls.Where(_ => string.IsNullOrEmpty(_.User) || _.User == user).ToList();
+                bool killApps = context.AppSettings.First(x => x.Name == "stopApp").Value == "1";
+                var appVersion = context.AppSettings.First(x => x.Name == "AppVersion")?.Value!;
+                var downloaderVersion = context.AppSettings.First(x => x.Name == "DownloaderVersion")?.Value!;
+
+                return new Helper { AllowedAppsAndUrls = appInfos, KillApps = killApps, AppVersion = appVersion, InstalledAppVersion = userDetail?.AppVersion!, DownloaderVersion = downloaderVersion, InstalledDownloaderVersion = userDetail?.DownloaderVersion! };
             }
         }
 
@@ -118,31 +100,28 @@ namespace AppInfoController.Controllers
         [Route("GetLastHitByUserDetails")]
         public IEnumerable<LastHitByUser> GetLastHitByUserDetails()
         {
-            lock (obj)
+            DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
+            TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
+            DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
+            using (var context = new AppControllerContext())
             {
-                DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
-                TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
-                DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
-                using (var context = new AppControllerContext())
+                var userValidity = int.Parse(context.AppSettings.First(x => x.Name == "UserValidity")?.Value ?? "10");
+                var users = context.LastHitByUsers.ToList();
+                users.ForEach(_ =>
                 {
-                    var userValidity = int.Parse(context.AppSettings.First(x => x.Name == "UserValidity")?.Value ?? "10");
-                    var users = context.LastHitByUsers.ToList();
-                    users.ForEach(_ => 
-                    {
-                        var d = _.Date?.Split(' ');
-                        var da = d[0].Split(new char[2] { '/', '-'} );
-                        var y = Convert.ToInt32(da.Last());
-                        var m = Convert.ToInt32(da[1]);
-                        var day = Convert.ToInt32(da[0]);
-                        var da1 = d[1].Split(":");
-                        var h = Convert.ToInt32(da1[0]);
-                        var mi = Convert.ToInt32(da1[1]);
-                        var s = Convert.ToInt32(da1[2]);
-                        var date = new DateTime(y, m, day, h, mi, s);
-                        _.Inactive = (iSTTime - date).TotalMinutes > userValidity;
-                    });
-                    return users;
-                }
+                    var d = _.Date?.Split(' ');
+                    var da = d[0].Split(new char[2] { '/', '-' });
+                    var y = Convert.ToInt32(da.Last());
+                    var m = Convert.ToInt32(da[1]);
+                    var day = Convert.ToInt32(da[0]);
+                    var da1 = d[1].Split(":");
+                    var h = Convert.ToInt32(da1[0]);
+                    var mi = Convert.ToInt32(da1[1]);
+                    var s = Convert.ToInt32(da1[2]);
+                    var date = new DateTime(y, m, day, h, mi, s);
+                    _.Inactive = (iSTTime - date).TotalMinutes > userValidity;
+                });
+                return users;
             }
         }
 
@@ -150,22 +129,19 @@ namespace AppInfoController.Controllers
         [Route("GetValidURLs")]
         public ValidData GetValidURLs(string user)
         {
-            lock (obj)
+            using (var context = new AppControllerContext())
             {
-                using (var context = new AppControllerContext())
+                var validData = new ValidData();
+                var userDetail = context.LastHitByUsers.FirstOrDefault(x => x.User == user);
+                if (userDetail != null)
                 {
-                    var validData = new ValidData();
-                    var userDetail = context.LastHitByUsers.FirstOrDefault(x => x.User == user);
-                    if(userDetail != null)
-                    {
-                        validData.Ids = userDetail.AllowedUserId;
-                    }
-                    
-                    validData.URLs = context.AllowedAppsAndUrls
-                        .Where(_ => _.Type == "URL" && (string.IsNullOrEmpty(_.User) || _.User == user))
-                        .Select(_ => new ValidURL { Url = _.Name! }).ToList();
-                    return validData;
+                    validData.Ids = userDetail.AllowedUserId;
                 }
+
+                validData.URLs = context.AllowedAppsAndUrls
+                    .Where(_ => _.Type == "URL" && (string.IsNullOrEmpty(_.User) || _.User == user))
+                    .Select(_ => new ValidURL { Url = _.Name! }).ToList();
+                return validData;
             }
         }
 
@@ -173,13 +149,10 @@ namespace AppInfoController.Controllers
         [Route("AddURLOrApp")]
         public void AddURLOrApp(AllowedAppsAndUrl appInfo)
         {
-            lock (obj)
+            using (var db = new AppControllerContext())
             {
-                using (var db = new AppControllerContext())
-                {
-                    db.AllowedAppsAndUrls.Add(appInfo);
-                    db.SaveChanges();
-                }
+                db.AllowedAppsAndUrls.Add(appInfo);
+                db.SaveChanges();
             }
         }
 
@@ -187,13 +160,10 @@ namespace AppInfoController.Controllers
         [Route("AddKillAppSetting")]
         public void AddKillAppSetting(KillAppsHelper killAppsHelper)
         {
-            lock (obj)
+            using (var db = new AppControllerContext())
             {
-                using (var db = new AppControllerContext())
-                {
-                    db.AppSettings.First(x => x.Name == "stopApp").Value = killAppsHelper.KillApp ? "1" : "0";
-                    db.SaveChanges();
-                }
+                db.AppSettings.First(x => x.Name == "stopApp").Value = killAppsHelper.KillApp ? "1" : "0";
+                db.SaveChanges();
             }
         }
 
@@ -202,13 +172,10 @@ namespace AppInfoController.Controllers
         [Route("UpdateValidity")]
         public void UpdateValidity(UpdateUserValidity validity)
         {
-            lock (obj)
+            using (var db = new AppControllerContext())
             {
-                using (var db = new AppControllerContext())
-                {
-                    db.AppSettings.First(x => x.Name == "UserValidity").Value = validity.Validity.ToString();
-                    db.SaveChanges();
-                }
+                db.AppSettings.First(x => x.Name == "UserValidity").Value = validity.Validity.ToString();
+                db.SaveChanges();
             }
         }
 
@@ -216,13 +183,10 @@ namespace AppInfoController.Controllers
         [Route("UpdateLatestAppVersion")]
         public void UpdateLatestAppVersion(LatestAppVersion latestAppVersion)
         {
-            lock (obj)
+            using (var db = new AppControllerContext())
             {
-                using (var db = new AppControllerContext())
-                {
-                    db.AppSettings.First(x => x.Name == "AppVersion").Value = latestAppVersion.AppVersion;
-                    db.SaveChanges();
-                }
+                db.AppSettings.First(x => x.Name == "AppVersion").Value = latestAppVersion.AppVersion;
+                db.SaveChanges();
             }
         }
 
@@ -230,21 +194,18 @@ namespace AppInfoController.Controllers
         [Route("UpdateLatestDownloaderVersion")]
         public void UpdateLatestDownloaderVersion(LatestAppVersion latestAppVersion)
         {
-            lock (obj)
+            using (var db = new AppControllerContext())
             {
-                using (var db = new AppControllerContext())
+                var downloaderVersion = db.AppSettings.FirstOrDefault(x => x.Name == "DownloaderVersion");
+                if (downloaderVersion != null)
                 {
-                    var downloaderVersion = db.AppSettings.FirstOrDefault(x => x.Name == "DownloaderVersion");
-                    if(downloaderVersion != null)
-                    {
-                        downloaderVersion.Value = latestAppVersion.AppVersion;
-                    }
-                    else
-                    {
-                        db.AppSettings.Add(new AppSetting { Name = "DownloaderVersion", Value = latestAppVersion.AppVersion });
-                    }
-                    db.SaveChanges();
+                    downloaderVersion.Value = latestAppVersion.AppVersion;
                 }
+                else
+                {
+                    db.AppSettings.Add(new AppSetting { Name = "DownloaderVersion", Value = latestAppVersion.AppVersion });
+                }
+                db.SaveChanges();
             }
         }
 
@@ -252,20 +213,17 @@ namespace AppInfoController.Controllers
         [Route("UpdateUserDetail")]
         public void UpdateUserDetail(LastHitByUser user)
         {
-            lock (obj)
+            using (var db = new AppControllerContext())
             {
-                using (var db = new AppControllerContext())
+                var userDetail = db.LastHitByUsers.FirstOrDefault(x => x.User == user.User);
+                if (userDetail != null)
                 {
-                    var userDetail = db.LastHitByUsers.FirstOrDefault(x => x.User == user.User);
-                    if(userDetail != null)
-                    {
-                        userDetail.Name = user.Name;
-                        userDetail.MobileNo = user.MobileNo;
-                        userDetail.City = user.City;
-                        userDetail.Address = user.Address;
-                        userDetail.AllowedUserId = user.AllowedUserId;
-                        db.SaveChanges();
-                    }
+                    userDetail.Name = user.Name;
+                    userDetail.MobileNo = user.MobileNo;
+                    userDetail.City = user.City;
+                    userDetail.Address = user.Address;
+                    userDetail.AllowedUserId = user.AllowedUserId;
+                    db.SaveChanges();
                 }
             }
         }
@@ -274,78 +232,109 @@ namespace AppInfoController.Controllers
         [Route("UpdateAppVersion")]
         public void UpdateAppVersion(LastHitByUser user)
         {
-            lock (obj)
+            using (var db = new AppControllerContext())
             {
-                using (var db = new AppControllerContext())
+                var userDetail = db.LastHitByUsers.FirstOrDefault(x => x.User == user.User);
+                DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
+                TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
+                DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
+                var time = iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
+                if (userDetail != null)
                 {
-                    var userDetail = db.LastHitByUsers.FirstOrDefault(x => x.User == user.User);
-                    DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
-                    TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
-                    DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
-                    var time = iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
-                    if (userDetail != null)
-                    {
-                        userDetail.Date = time;
-                        userDetail.AppVersion = user.AppVersion;
-                        userDetail.DownloaderVersion = user.DownloaderVersion;
-                    }
-                    else
-                    {
-                        var lastHit = new LastHitByUser
-                        {
-                            User = user.User,
-                            Date = time,
-                            AppVersion = user.AppVersion,
-                            DownloaderVersion = user.DownloaderVersion
-                        };
-                        db.LastHitByUsers.Add(lastHit);
-                    }
-                    db.SaveChanges();
+                    userDetail.Date = time;
+                    userDetail.AppVersion = user.AppVersion;
+                    userDetail.DownloaderVersion = user.DownloaderVersion;
                 }
+                else
+                {
+                    var lastHit = new LastHitByUser
+                    {
+                        User = user.User,
+                        Date = time,
+                        AppVersion = user.AppVersion,
+                        DownloaderVersion = user.DownloaderVersion
+                    };
+                    db.LastHitByUsers.Add(lastHit);
+                }
+                db.SaveChanges();
+                //var t = Task.Run(async () =>
+                //{
+                //    await PostData(user);
+                //});
+                //t.Wait();
             }
         }
+
+        //private static async Task PostData(LastHitByUser appInfo)
+        //{
+        //    try
+        //    {
+        //        var handler = new HttpClientHandler
+        //        {
+        //            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+        //        };
+        //        var client = new HttpClient(handler);
+
+        //        // Set the base address to simplify maintenance & requests
+        //        client.BaseAddress = new Uri("https://ac.saralesuvidha.com/");
+
+        //        // Serialize class into JSON
+        //        var payload = JsonConvert.SerializeObject(appInfo);
+
+        //        // Wrap our JSON inside a StringContent object
+        //        var content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+        //        // Post to the endpoint
+        //        var response = await client.PostAsync("/appinfo/UpdateAppVersion", content);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //    }
+        //}
+
 
         [HttpPost]
         public void Post(AppInfo appInfo)
         {
-            lock (obj)
+            if(appInfo.Summary != null && appInfo.Summary.Contains("being killed"))
             {
-                using (var db = new AppControllerContext())
+                return;
+            }
+            using (var db = new AppControllerContext())
+            {
+                var userInfo = db.LastHitByUsers.FirstOrDefault(_ => _.User == appInfo.User);
+                if (userInfo != null)
                 {
-                    var userInfo = db.LastHitByUsers.FirstOrDefault(_ => _.User == appInfo.User);
-                    if(userInfo != null)
+                    var st = new StringBuilder();
+                    if (!string.IsNullOrEmpty(userInfo.Name))
                     {
-                        var st = new StringBuilder();
-                        if(!string.IsNullOrEmpty(userInfo.Name))
-                        {
-                            st.Append("Name: " + userInfo.Name + " ");
-                        }
-                        if (!string.IsNullOrEmpty(userInfo.City))
-                        {
-                            st.Append("City: " + userInfo.City + " ");
-                        }
-                        if (!string.IsNullOrEmpty(userInfo.MobileNo))
-                        {
-                            st.Append("Mobile: " + userInfo.MobileNo + " ");
-                        }
-                        if (!string.IsNullOrEmpty(userInfo.Address))
-                        {
-                            st.Append("Address: " + userInfo.Address + " ");
-                        }
-                        if(!string.IsNullOrEmpty(st.ToString()))
-                        {
-                            appInfo.User = $"{appInfo.User} ({st.ToString().Trim()})";
-                        }
+                        st.Append("Name: " + userInfo.Name + " ");
                     }
-                    appInfo.Id = Guid.NewGuid().ToString();
-                    DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
-                    TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
-                    DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
-                    var time = iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
-                    appInfo.Date = time;
-                    db.AppInfos.Add(appInfo);
-                    db.SaveChanges();
+                    if (!string.IsNullOrEmpty(userInfo.City))
+                    {
+                        st.Append("City: " + userInfo.City + " ");
+                    }
+                    if (!string.IsNullOrEmpty(userInfo.MobileNo))
+                    {
+                        st.Append("Mobile: " + userInfo.MobileNo + " ");
+                    }
+                    if (!string.IsNullOrEmpty(userInfo.Address))
+                    {
+                        st.Append("Address: " + userInfo.Address + " ");
+                    }
+                    if (!string.IsNullOrEmpty(st.ToString()))
+                    {
+                        appInfo.User = $"{appInfo.User} ({st.ToString().Trim()})";
+                    }
                 }
+                appInfo.Id = Guid.NewGuid().ToString();
+                DateTime utcTime = DateTime.Now.ToUniversalTime(); // From current datetime I am retriving UTC time
+                TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"); // Now I am Getting `IST` time From `UTC`
+                DateTime iSTTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
+                var time = iSTTime.ToString("dd/MM/yyyy HH:mm:ss");
+                appInfo.Date = time;
+                db.AppInfos.Add(appInfo);
+                db.SaveChanges();
             }
         }
 
@@ -353,46 +342,41 @@ namespace AppInfoController.Controllers
         [Route("DeleteDetails")]
         public void DeleteDetails(ItemsWrapper itemsWrapper)
         {
-            lock (obj)
-            {
-                List<string> _ = new();
+            List<string> _ = new();
 
-                try
+            try
+            {
+                using (var db = new AppControllerContext())
                 {
-                    using (var db = new AppControllerContext())
-                    {
-                        IQueryable<AppInfo> items = db.AppInfos.Where(_ => itemsWrapper.Ids.Contains(_.Id));
-                        if (items == null) return;
-                        db.AppInfos.RemoveRange(items);
-                        db.SaveChanges();
-                    }
-                }
-                catch (Exception ex)
-                {
+                    IQueryable<AppInfo> items = db.AppInfos.Where(_ => itemsWrapper.Ids.Contains(_.Id));
+                    if (items == null) return;
+                    db.AppInfos.RemoveRange(items);
+                    db.SaveChanges();
                 }
             }
+            catch (Exception ex)
+            {
+            }
+            
         }
 
         [HttpPost]
         [Route("DeleteURLOrApp")]
         public void DeleteURLOrApp(ItemWrapper itemWrapper)
         {
-            lock (obj)
-            {
-                List<string> _ = new();
+            List<string> _ = new();
 
-                try
+            try
+            {
+                using (var db = new AppControllerContext())
                 {
-                    using (var db = new AppControllerContext())
-                    {
-                        var item = db.AllowedAppsAndUrls.First(_ => _.Id == itemWrapper.Id);
-                        db.AllowedAppsAndUrls.Remove(item);
-                        db.SaveChanges();
-                    }
+                    var item = db.AllowedAppsAndUrls.First(_ => _.Id == itemWrapper.Id);
+                    db.AllowedAppsAndUrls.Remove(item);
+                    db.SaveChanges();
                 }
-                catch (Exception ex)
-                {
-                }
+            }
+            catch (Exception ex)
+            {
             }
         }
 
@@ -400,22 +384,19 @@ namespace AppInfoController.Controllers
         [Route("DeleteLastHitDetail")]
         public void DeleteLastHitDetail(UserWrapper item)
         {
-            lock (obj)
-            {
-                List<string> _ = new();
+            List<string> _ = new();
 
-                try
+            try
+            {
+                using (var db = new AppControllerContext())
                 {
-                    using (var db = new AppControllerContext())
-                    {
-                        var hit = db.LastHitByUsers.First(_ => _.User == item.User);
-                        db.LastHitByUsers.Remove(hit);
-                        db.SaveChanges();
-                    }
+                    var hit = db.LastHitByUsers.First(_ => _.User == item.User);
+                    db.LastHitByUsers.Remove(hit);
+                    db.SaveChanges();
                 }
-                catch (Exception ex)
-                {
-                }
+            }
+            catch (Exception ex)
+            {
             }
         }
 
@@ -423,53 +404,47 @@ namespace AppInfoController.Controllers
         [Route("ValidateUser")]
         public string ValidateUser(Login login)
         {
-            lock (obj)
-            {
-                List<string> _ = new();
+            List<string> _ = new();
 
-                try
+            try
+            {
+                using (var db = new AppControllerContext())
                 {
-                    using (var db = new AppControllerContext())
+                    var user = db.AppSettings.First(x => x.Name == "UserName")?.Value;
+                    var password = db.AppSettings.First(x => x.Name == "Password")?.Value;
+                    if (user!.Equals(login.UserName, StringComparison.InvariantCultureIgnoreCase)
+                        && password! == login.Password)
                     {
-                        var user = db.AppSettings.First(x => x.Name == "UserName")?.Value;
-                        var password = db.AppSettings.First(x => x.Name == "Password")?.Value;
-                        if(user!.Equals(login.UserName, StringComparison.InvariantCultureIgnoreCase)
-                            && password! == login.Password)
-                        {
-                            Guid g = Guid.NewGuid();
-                            string guidString = Convert.ToBase64String(g.ToByteArray());
-                            guidString = guidString.Replace("=", "");
-                            guidString = guidString.Replace("+", "");
-                            return guidString;
-                        }
+                        Guid g = Guid.NewGuid();
+                        string guidString = Convert.ToBase64String(g.ToByteArray());
+                        guidString = guidString.Replace("=", "");
+                        guidString = guidString.Replace("+", "");
+                        return guidString;
                     }
                 }
-                catch (Exception ex)
-                {
-                }
-                return "";
             }
+            catch (Exception ex)
+            {
+            }
+            return "";
         }
 
         [HttpPost]
         [Route("SetLatLong")]
         public void SetLatLong(LatLongInfo latLongInfo)
         {
-            lock (obj)
+            try
             {
-                try
+                using (var db = new AppControllerContext())
                 {
-                    using (var db = new AppControllerContext())
-                    {
-                        var userInfo = db.LastHitByUsers.FirstOrDefault(_ => _.User == latLongInfo.User);
-                        
-                        userInfo!.Summary = latLongInfo.Summary;
-                        db.SaveChanges();
-                    }
+                    var userInfo = db.LastHitByUsers.FirstOrDefault(_ => _.User == latLongInfo.User);
+
+                    userInfo!.Summary = latLongInfo.Summary;
+                    db.SaveChanges();
                 }
-                catch (Exception ex)
-                {
-                }
+            }
+            catch (Exception ex)
+            {
             }
         }
 

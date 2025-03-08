@@ -24,8 +24,6 @@ namespace MicrophoneRecorder
         private BufferedWaveProvider bwp;
         WaveOut wo;
         HubConnection hubConnection;
-        private int sampleRate;
-        private int channelCount;
         private Model SelectedUser;
         private bool isListening;
         private static string _userInner = System.Security.Principal.WindowsIdentity.GetCurrent().Name;

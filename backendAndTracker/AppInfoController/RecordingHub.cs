@@ -15,9 +15,9 @@ namespace AppInfoController
         {
             if(!availableURLs.Any() && !usedURLs.Any())
             {
-                availableURLs.Add("https://friendly-mendeleev.180-179-213-167.plesk.page/recordinghub");
-                availableURLs.Add("https://cool-albattani.180-179-213-167.plesk.page/recordinghub");
-                availableURLs.Add("https://www.appcontroller.in/recordinghub");
+                //availableURLs.Add("https://friendly-mendeleev.180-179-213-167.plesk.page/recordinghub");
+                availableURLs.Add("http://180.179.213.167/plesk-site-preview/appcontroller2.in/recordinghub");
+                availableURLs.Add("http://180.179.213.167/plesk-site-preview/appcontroller1.co.in/recordinghub");
                 //availableURLs.Add("http://localhost:5122/recordinghub");
             }
         }

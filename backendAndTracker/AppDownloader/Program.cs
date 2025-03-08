@@ -53,6 +53,7 @@ namespace AppDownloader
                         File.Delete(parent + $"\\{appHelper.AppVersion}.zip");
                     }
                     await PostData(new UserDetail { AppVersion = appHelper.AppVersion, User = user, DownloaderVersion = appHelper.InstalledDownloaderVersion });
+                    processes = Process.GetProcessesByName("AppController");
                     if (processes == null || !processes.Any())
                     {
                         var path = Path.Combine(parent + "\\AppController", "AppController.exe");
